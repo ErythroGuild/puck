@@ -1,4 +1,4 @@
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
@@ -18,8 +18,11 @@ namespace Puck {
 		private static DiscordEmoji emoji_refresh, emoji_delist;
 
 		private const string path_token = @"token.txt";
-		//private const ulong ch_lfg_id = 542093438238326804;
+#if RELEASE
+		private const ulong ch_lfg_id = 542093438238326804;
+#elif DEBUG
 		private const ulong ch_lfg_id = 489274692255875091; // #test
+#endif
 		private const string
 			emoji_tank_str = ":shield:",
 			emoji_heal_str = ":candle:",
