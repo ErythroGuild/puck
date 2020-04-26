@@ -239,16 +239,17 @@ namespace Puck {
 			string output = "";
 			string box_empty = "\u2610";
 			string box_checked = "\u2611\uFE0E";
+			string separator = "\u2002|\u2002";
 
 			output += (group.tank == 0) ? box_empty : box_checked;
 			output += emoji_tank.ToString();
 
-			output += " | ";
+			output += separator;
 			output += (group.heal == 0) ? box_empty : box_checked;
 			output += emoji_heal.ToString();
 
 			for (int i=1; i<=3; i++) {
-				output += " | ";
+				output += separator;
 				output += (group.dps < i) ? box_empty : box_checked;
 				output += emoji_dps.ToString();
 			}
