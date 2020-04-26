@@ -6,10 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Timers;
 
 namespace Puck {
 	class Program {
 		private static DiscordClient discord;
+		private static ConfigOptions config;
 		private static DiscordChannel ch_lfg;
 
 		private static DiscordEmoji emoji_tank, emoji_heal, emoji_dps;
@@ -32,6 +34,7 @@ namespace Puck {
 			public DiscordMessage bulletin;
 			public GroupOptions options;
 			public GroupDungeon group;
+			public Timer update;
 		};
 
 		private struct GroupOptions {
@@ -50,9 +53,10 @@ namespace Puck {
 		};
 
 		private struct ConfigOptions {
-			DiscordChannel	bulletin_channel;
-			string			default_mention;
-			DateTimeOffset	default_expiry;
+			public DiscordChannel	bulletin_channel;
+			public string			default_mention;
+			public TimeSpan			default_expiry;
+			public TimeSpan			default_refresh;
 		};
 
 		private enum GroupType {
@@ -93,7 +97,7 @@ namespace Puck {
 				if (isMentioned) {
 					_ = e.Message.Channel.TriggerTypingAsync();	// we don't want to await
 
-					Console.WriteLine("Raw message:\n" + e.Message.Content);
+					Console.WriteLine("Raw message:\n" + e.Message.Content + "\n");	// extra newline
 					GroupOptions command = ParseCommand(e.Message);
 					GroupDungeon group = new GroupDungeon() { tank = 0, heal = 0, dps = 0 };
 
@@ -101,13 +105,19 @@ namespace Puck {
 					string bulletin = ConstructBulletin(command, group);
 
 					// Set up controls on the bulletin and save it to a table.
-					DiscordMessage message_sent = await discord.SendMessageAsync(ch_lfg, bulletin);
+					DiscordMessage message_sent =
+						await discord.SendMessageAsync(config.bulletin_channel, bulletin);
 					await CreateControls(message_sent);
 					ulong message_id = message_sent.Id;
+					Timer timer = new Timer(TimeSpan.FromSeconds(15).TotalMilliseconds);
+					timer.AutoReset = true;
+					timer.Elapsed += (o, e) => { _ = UpdateBulletin(message_sent); };
+					timer.Start();
 					GroupEntry entry = new GroupEntry() {
 						bulletin = message_sent,
 						options = command,
 						group = group,
+						update = timer,
 					};
 					table_bulletins.Add(message_id, entry);
 				}
@@ -123,6 +133,15 @@ namespace Puck {
 				emoji_dps  = DiscordEmoji.FromName(discord, emoji_dps_str);
 				emoji_refresh = DiscordEmoji.FromName(discord, emoji_refresh_str);
 				emoji_delist  = DiscordEmoji.FromName(discord, emoji_delist_str);
+
+				// Set up default config
+				// TODO: read this in from a settings .txt
+				config = new ConfigOptions {
+					bulletin_channel = ch_lfg,
+					default_mention = "M+",
+					default_expiry  = TimeSpan.FromMinutes(10),
+					default_refresh = TimeSpan.FromMinutes(5),
+				};
 
 				// Set "custom status" (TODO: still waiting for an actual API)
 				DiscordActivity helptext =
@@ -163,6 +182,18 @@ namespace Puck {
 							table_bulletins[message_id] = entry;
 							// TODO: Add removal reason for audit logs
 							await entry.bulletin.DeleteReactionAsync(emoji_dps, e.User);
+							break;
+						case emoji_refresh_str:
+							entry.options.expiry += config.default_refresh;
+							table_bulletins[message_id] = entry;
+							// TODO: Add removal reason for audit logs
+							await entry.bulletin.DeleteReactionAsync(emoji_refresh, e.User);
+							break;
+						case emoji_delist_str:
+							entry.options.expiry = DateTimeOffset.Now;
+							table_bulletins[message_id] = entry;
+							// TODO: Add removal reason for audit logs
+							await entry.bulletin.DeleteReactionAsync(emoji_delist, e.User);
 							break;
 						}
 					} else {
@@ -217,7 +248,7 @@ namespace Puck {
 				type = GroupType.Dungeon,
 				mention = "",
 				title = "",
-				expiry = message.Timestamp,
+				expiry = message.Timestamp + config.default_expiry,
 				isConfig = false,
 			};
 
@@ -225,7 +256,7 @@ namespace Puck {
 			Regex regex_mention = new Regex(@"<@!\d+>");
 			command = regex_mention.Replace(command, "").Trim();
 
-			//if (command.StartsWith("-"))
+			//if (command.StartsWith("!"))
 			//	options.isHelp = true;
 			//else
 			//	options.isHelp = false;
@@ -272,7 +303,17 @@ namespace Puck {
 			bulletin += Format.Bold(command.title) + "\n";
 			bulletin += "group lead: " + command.owner.Mention + "\n";
 			bulletin += ToString(group) + "\n";
-			bulletin += Format.Italicize("this group will be delisted in ~");
+			TimeSpan interval = command.expiry - DateTimeOffset.Now;
+			// TODO: better error checking
+			if (interval >= TimeSpan.FromMinutes(60)) {
+				command.expiry = DateTimeOffset.Now + TimeSpan.FromMinutes(60);
+				interval = command.expiry - DateTimeOffset.Now;
+			}
+			string interval_str = interval.ToString(@"mm\:ss");
+			string delist_str = "this group will be delisted in ~" + interval_str;
+			if (interval < TimeSpan.Zero)
+				delist_str = "this group has been delisted";
+			bulletin += Format.Italicize(delist_str);
 			return bulletin;
 		}
 
@@ -282,6 +323,13 @@ namespace Puck {
 				table_bulletins[message.Id].group
 			);
 			await message.ModifyAsync(bulletin);
+
+			// TODO: add a grace period after delisting?
+			// TODO: add a warning 1:30 before delisting?
+			if (table_bulletins[message.Id].options.expiry < DateTimeOffset.Now) {
+				table_bulletins.Remove(message.Id);
+				Console.WriteLine("Delisting " + message.Id.ToString() + "\n");	// extra newline
+			}
 		}
 	}
 }
