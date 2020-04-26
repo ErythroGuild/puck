@@ -38,6 +38,7 @@ namespace Puck {
 		};
 
 		private struct GroupOptions {
+			public DiscordGuild guild;
 			public DiscordUser owner;
 			public bool isHelp;
 			public GroupType type;
@@ -138,7 +139,7 @@ namespace Puck {
 				// TODO: read this in from a settings .txt
 				config = new ConfigOptions {
 					bulletin_channel = ch_lfg,
-					default_mention = "M+",
+					default_mention = "",
 					default_expiry  = TimeSpan.FromMinutes(10),
 					default_refresh = TimeSpan.FromMinutes(5),
 				};
@@ -243,10 +244,11 @@ namespace Puck {
 		static GroupOptions ParseCommand(DiscordMessage message) {
 			string command = message.Content;
 			GroupOptions options = new GroupOptions() {
+				guild = message.Channel.Guild,
 				owner = message.Author,
-				isHelp = true,
+				isHelp = false,
 				type = GroupType.Dungeon,
-				mention = "",
+				mention = config.default_mention,
 				title = "",
 				expiry = message.Timestamp + config.default_expiry,
 				isConfig = false,
@@ -256,12 +258,29 @@ namespace Puck {
 			Regex regex_mention = new Regex(@"<@!\d+>");
 			command = regex_mention.Replace(command, "").Trim();
 
-			//if (command.StartsWith("!"))
-			//	options.isHelp = true;
-			//else
-			//	options.isHelp = false;
+			Regex regex_command = new Regex(@"(?:-(\S+)\s+)?(?:!(\S+)\s+)?(?:(.+))");
+			Match match = regex_command.Match(command);
+			string command_command = match.Groups[1].Value.ToLower();
+			string command_mention = match.Groups[2].Value;
+			string command_title   = match.Groups[3].Value;
 
-			options.title = command;
+			switch (command_command) {
+			case "?":
+			case "h":
+			case "help":
+				options.isHelp = true;
+				break;
+			case "c":
+			case "config":
+				options.isConfig = true;
+				break;
+			}
+
+			if (command_mention != string.Empty) {
+				options.mention = command_mention;
+			}
+
+			options.title = command_title;
 
 			return options;
 		}
@@ -297,18 +316,28 @@ namespace Puck {
 		}
 
 		static string ConstructBulletin(GroupOptions command, GroupDungeon group) {
-			string bulletin = "";
-			if (command.mention != "")
-				bulletin += "@" + command.mention + " ";
-			bulletin += Format.Bold(command.title) + "\n";
-			bulletin += "group lead: " + command.owner.Mention + "\n";
-			bulletin += ToString(group) + "\n";
 			TimeSpan interval = command.expiry - DateTimeOffset.Now;
 			// TODO: better error checking
 			if (interval >= TimeSpan.FromMinutes(60)) {
 				command.expiry = DateTimeOffset.Now + TimeSpan.FromMinutes(60);
 				interval = command.expiry - DateTimeOffset.Now;
 			}
+
+			string bulletin = "";
+			if (interval > TimeSpan.Zero) {
+				if (command.mention != "")
+					foreach (DiscordRole role in command.guild.Roles.Values) {
+						if (role.Name == command.mention) {
+							bulletin += role.Mention + " ";
+							break;
+						}
+					}
+				bulletin += Format.Bold(command.title) + "\n";
+			} else {
+				bulletin += Format.Strikethrough(Format.Bold(command.title)) + "\n";
+			}
+			bulletin += "group lead: " + command.owner.Mention + "\n";
+			bulletin += ToString(group) + "\n";
 			string interval_str = interval.ToString(@"mm\:ss");
 			string delist_str = "this group will be delisted in ~" + interval_str;
 			if (interval < TimeSpan.Zero)
