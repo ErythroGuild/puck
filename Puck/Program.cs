@@ -138,9 +138,13 @@ namespace Puck {
 				if (table_bulletins.ContainsKey(message_id)) {
 					GroupEntry entry = table_bulletins[message_id];
 
+					if (e.User == discord.CurrentUser)
+						return;
+
+					Console.Write("  button pressed: " + e.Emoji.GetDiscordName());
+					Console.Write(" (" + e.User.Username + ")\n");
 					if (e.User == entry.options.owner) {
 						// modulo 1/1/3, but +1 because counting "0" as a state
-						Console.WriteLine("reaction: " + e.Emoji.GetDiscordName());
 						switch (e.Emoji.GetDiscordName()) {
 						case emoji_tank_str:
 							entry.group.tank = (entry.group.tank + 1) % 2;
@@ -160,7 +164,20 @@ namespace Puck {
 							// TODO: Add removal reason for audit logs
 							await entry.bulletin.DeleteReactionAsync(emoji_dps, e.User);
 							break;
-						default:
+						}
+					} else {
+						switch (e.Emoji.GetDiscordName()) {
+						case emoji_tank_str:
+							entry.group.tank = Math.Max(entry.group.tank + 1, 1);
+							table_bulletins[message_id] = entry;
+							break;
+						case emoji_heal_str:
+							entry.group.heal = Math.Max(entry.group.heal + 1, 1);
+							table_bulletins[message_id] = entry;
+							break;
+						case emoji_dps_str:
+							entry.group.dps  = Math.Max(entry.group.dps  + 1, 3);
+							table_bulletins[message_id] = entry;
 							break;
 						}
 					}
