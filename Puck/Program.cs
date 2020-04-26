@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
@@ -356,6 +356,10 @@ namespace Puck {
 			// TODO: add a grace period after delisting?
 			// TODO: add a warning 1:30 before delisting?
 			if (table_bulletins[message.Id].options.expiry < DateTimeOffset.Now) {
+				DiscordMember owner =
+					await table_bulletins[message.Id].options.guild.GetMemberAsync(table_bulletins[message.Id].options.owner.Id);
+				_ = owner.SendMessageAsync("Your group **" + table_bulletins[message.Id].options.title + "** has been delisted. :white_check_mark:");
+
 				table_bulletins.Remove(message.Id);
 				Console.WriteLine("Delisting " + message.Id.ToString() + "\n");	// extra newline
 			}
