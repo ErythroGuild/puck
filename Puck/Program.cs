@@ -11,18 +11,15 @@ using System.Timers;
 namespace Puck {
 	class Program {
 		private static DiscordClient discord;
-		private static ConfigOptions config;
-		private static DiscordChannel ch_lfg;
+		private static Dictionary<ulong, Settings> settings;
+		private static Dictionary<ulong, GroupEntry> bulletins =
+			new Dictionary<ulong, GroupEntry>();
 
 		private static DiscordEmoji emoji_tank, emoji_heal, emoji_dps;
 		private static DiscordEmoji emoji_refresh, emoji_delist;
 
 		private const string path_token = @"token.txt";
-#if RELEASE
-		private const ulong ch_lfg_id = 542093438238326804;
-#elif DEBUG
-		private const ulong ch_lfg_id = 489274692255875091; // #test
-#endif
+		private const string path_settings = @"settings.txt";
 		private const string
 			emoji_tank_str = ":shield:",
 			emoji_heal_str = ":candle:",
@@ -31,7 +28,10 @@ namespace Puck {
 			emoji_refresh_str = ":arrows_counterclockwise:",
 			emoji_delist_str = ":white_check_mark:";
 
-		private static Dictionary<ulong, GroupEntry> table_bulletins = new Dictionary<ulong, GroupEntry>();
+		private static readonly double bulletin_refresh_interval =
+			TimeSpan.FromSeconds(15).TotalMilliseconds;
+		private const ulong channel_debug_id = 489274692255875091;	// <Erythro> - #test
+
 
 		private struct GroupEntry {
 			public DiscordMessage bulletin;
@@ -49,21 +49,14 @@ namespace Puck {
 			public string title;
 			public DateTimeOffset expiry;
 			public bool isConfig;
-			public ConfigOptions config;
+			public Settings config;
 		};
 
 		private struct GroupDungeon {
 			public int tank, heal, dps;
 		};
 
-		private struct ConfigOptions {
-			public DiscordChannel	bulletin_channel;
-			public string			default_mention;
-			public TimeSpan			default_expiry;
-			public TimeSpan			default_refresh;
-		};
-
-		private enum GroupType {
+		public enum GroupType {
 			Other = -1,
 			Dungeon, Raid,
 			Island, Warfront, Vision
@@ -109,11 +102,19 @@ namespace Puck {
 					string bulletin = ConstructBulletin(command, group);
 
 					// Set up controls on the bulletin and save it to a table.
+					DiscordGuild guild = e.Guild;
+#if !DEBUG
 					DiscordMessage message_sent =
-						await discord.SendMessageAsync(config.bulletin_channel, bulletin);
+						await discord.SendMessageAsync(settings[guild.Id].bulletin, bulletin);
+#else
+					DiscordChannel channel_debug =
+						await discord.GetChannelAsync(channel_debug_id);
+					DiscordMessage message_sent =
+						await discord.SendMessageAsync(channel_debug, bulletin);
+#endif
 					await CreateControls(message_sent);
 					ulong message_id = message_sent.Id;
-					Timer timer = new Timer(TimeSpan.FromSeconds(15).TotalMilliseconds);
+					Timer timer = new Timer(bulletin_refresh_interval);
 					timer.AutoReset = true;
 					timer.Elapsed += (o, e) => { _ = UpdateBulletin(message_sent); };
 					timer.Start();
@@ -123,29 +124,17 @@ namespace Puck {
 						group = group,
 						update = timer,
 					};
-					table_bulletins.Add(message_id, entry);
+					bulletins.Add(message_id, entry);
 				}
 			};
 
 			discord.Ready += async e => {
-				// Initialize channels
-				ch_lfg = await discord.GetChannelAsync(ch_lfg_id);
-
 				// Initialize emojis
 				emoji_tank = DiscordEmoji.FromName(discord, emoji_tank_str);
 				emoji_heal = DiscordEmoji.FromName(discord, emoji_heal_str);
 				emoji_dps  = DiscordEmoji.FromName(discord, emoji_dps_str);
 				emoji_refresh = DiscordEmoji.FromName(discord, emoji_refresh_str);
 				emoji_delist  = DiscordEmoji.FromName(discord, emoji_delist_str);
-
-				// Set up default config
-				// TODO: read this in from a settings .txt
-				config = new ConfigOptions {
-					bulletin_channel = ch_lfg,
-					default_mention = "",
-					default_expiry  = TimeSpan.FromMinutes(10),
-					default_refresh = TimeSpan.FromMinutes(5),
-				};
 
 				// Set "custom status" (TODO: still waiting for an actual API)
 				DiscordActivity helptext =
@@ -156,10 +145,23 @@ namespace Puck {
 				Console.WriteLine("Monitoring messages...\n");
 			};
 
+			discord.GuildDownloadCompleted += async e => {
+				// Set up default config
+				settings = await Settings.Import(path_settings, discord);
+				foreach (ulong guild_id in discord.Guilds.Keys) {
+					if (!settings.ContainsKey(guild_id)) {
+						DiscordChannel channel_default = discord.Guilds[guild_id].GetDefaultChannel();
+						Settings settings_default = new Settings(channel_default);
+						settings.Add(guild_id, settings_default);
+					}
+				}
+				ExportSettings();
+			};
+
 			discord.MessageReactionAdded += async e => {
 				ulong message_id = e.Message.Id;
-				if (table_bulletins.ContainsKey(message_id)) {
-					GroupEntry entry = table_bulletins[message_id];
+				if (bulletins.ContainsKey(message_id)) {
+					GroupEntry entry = bulletins[message_id];
 
 					if (e.User == discord.CurrentUser)
 						return;
@@ -171,31 +173,32 @@ namespace Puck {
 						switch (e.Emoji.GetDiscordName()) {
 						case emoji_tank_str:
 							entry.group.tank = (entry.group.tank + 1) % 2;
-							table_bulletins[message_id] = entry;
+							bulletins[message_id] = entry;
 							// TODO: Add removal reason for audit logs
 							await entry.bulletin.DeleteReactionAsync(emoji_tank, e.User);
 							break;
 						case emoji_heal_str:
 							entry.group.heal = (entry.group.heal + 1) % 2;
-							table_bulletins[message_id] = entry;
+							bulletins[message_id] = entry;
 							// TODO: Add removal reason for audit logs
 							await entry.bulletin.DeleteReactionAsync(emoji_heal, e.User);
 							break;
 						case emoji_dps_str:
 							entry.group.dps = (entry.group.dps + 1) % 4;
-							table_bulletins[message_id] = entry;
+							bulletins[message_id] = entry;
 							// TODO: Add removal reason for audit logs
 							await entry.bulletin.DeleteReactionAsync(emoji_dps, e.User);
 							break;
 						case emoji_refresh_str:
-							entry.options.expiry += config.default_refresh;
-							table_bulletins[message_id] = entry;
+							ulong guild_id = entry.bulletin.Channel.GuildId;
+							entry.options.expiry += settings[guild_id].increment;
+							bulletins[message_id] = entry;
 							// TODO: Add removal reason for audit logs
 							await entry.bulletin.DeleteReactionAsync(emoji_refresh, e.User);
 							break;
 						case emoji_delist_str:
 							entry.options.expiry = DateTimeOffset.Now;
-							table_bulletins[message_id] = entry;
+							bulletins[message_id] = entry;
 							// TODO: Add removal reason for audit logs
 							await entry.bulletin.DeleteReactionAsync(emoji_delist, e.User);
 							break;
@@ -204,15 +207,15 @@ namespace Puck {
 						switch (e.Emoji.GetDiscordName()) {
 						case emoji_tank_str:
 							entry.group.tank = Math.Max(entry.group.tank + 1, 1);
-							table_bulletins[message_id] = entry;
+							bulletins[message_id] = entry;
 							break;
 						case emoji_heal_str:
 							entry.group.heal = Math.Max(entry.group.heal + 1, 1);
-							table_bulletins[message_id] = entry;
+							bulletins[message_id] = entry;
 							break;
 						case emoji_dps_str:
 							entry.group.dps  = Math.Max(entry.group.dps  + 1, 3);
-							table_bulletins[message_id] = entry;
+							bulletins[message_id] = entry;
 							break;
 						}
 					}
@@ -246,14 +249,15 @@ namespace Puck {
 
 		static GroupOptions ParseCommand(DiscordMessage message) {
 			string command = message.Content;
+			Settings settings_message = settings[message.Channel.GuildId];
 			GroupOptions options = new GroupOptions() {
 				guild = message.Channel.Guild,
 				owner = message.Author,
 				isHelp = false,
 				type = GroupType.Dungeon,
-				mention = config.default_mention,
+				mention = settings_message.default_mention?.Name ?? "",
 				title = "",
-				expiry = message.Timestamp + config.default_expiry,
+				expiry = message.Timestamp + settings_message.duration,
 				isConfig = false,
 			};
 
@@ -351,21 +355,25 @@ namespace Puck {
 
 		static async Task UpdateBulletin(DiscordMessage message) {
 			string bulletin = ConstructBulletin(
-				table_bulletins[message.Id].options,
-				table_bulletins[message.Id].group
+				bulletins[message.Id].options,
+				bulletins[message.Id].group
 			);
 			await message.ModifyAsync(bulletin);
 
 			// TODO: add a grace period after delisting?
 			// TODO: add a warning 1:30 before delisting?
-			if (table_bulletins[message.Id].options.expiry < DateTimeOffset.Now) {
+			if (bulletins[message.Id].options.expiry < DateTimeOffset.Now) {
 				DiscordMember owner =
-					await table_bulletins[message.Id].options.guild.GetMemberAsync(table_bulletins[message.Id].options.owner.Id);
-				_ = owner.SendMessageAsync("Your group **" + table_bulletins[message.Id].options.title + "** has been delisted. :white_check_mark:");
+					await bulletins[message.Id].options.guild.GetMemberAsync(bulletins[message.Id].options.owner.Id);
+				_ = owner.SendMessageAsync("Your group **" + bulletins[message.Id].options.title + "** has been delisted. :white_check_mark:");
 
-				table_bulletins.Remove(message.Id);
+				bulletins.Remove(message.Id);
 				Console.WriteLine("Delisting " + message.Id.ToString() + "\n");	// extra newline
 			}
+		}
+
+		static void ExportSettings() {
+			Settings.Export(path_settings, settings);
 		}
 	}
 }
