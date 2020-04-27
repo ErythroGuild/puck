@@ -29,6 +29,7 @@ namespace Puck {
 		private const string key_mention	= "mention role";
 		private const string key_duration	= "duration (min)";
 		private const string key_increment	= "increment (min)";
+		private const int count_keys = 4;
 
 		public static void Export(string path, Dictionary<ulong, Settings> settings) {
 			StreamWriter file = new StreamWriter(path);
@@ -42,7 +43,7 @@ namespace Puck {
 				Settings entry = pair.Value;
 
 				Write(key_bulletin,		entry.bulletin.Id.ToString());
-				Write(key_mention,		entry.default_mention.Id.ToString());
+				Write(key_mention,		entry.default_mention?.Id.ToString() ?? "null");
 				Write(key_duration,		entry.duration.TotalMinutes.ToString());
 				Write(key_increment,	entry.increment.TotalMinutes.ToString());
 			}
@@ -62,7 +63,7 @@ namespace Puck {
 				DiscordGuild guild = await client.GetGuildAsync(guild_id);
 
 				Dictionary<string, string> lines = new Dictionary<string, string>();
-				for (int i = 0; i < dict.Keys.Count; i++) {
+				for (int i = 0; i < count_keys; i++) {
 					line = file.ReadLine();
 					string[] line_parts = line.Split(serial_separator, 2);
 					lines.Add(line_parts[0], line_parts[1]);
@@ -76,6 +77,10 @@ namespace Puck {
 						settings.bulletin = await client.GetChannelAsync(bulletin_id);
 						break;
 					case key_mention:
+						if (data == "null") {
+							settings.default_mention = null;
+							break;
+						}
 						ulong mention_id = Convert.ToUInt64(data);
 						settings.default_mention = guild.GetRole(mention_id);
 						break;
@@ -92,6 +97,7 @@ namespace Puck {
 
 				dict.Add(guild_id, settings);
 			}
+			file.Close();
 
 			return dict;
 		}
