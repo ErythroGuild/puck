@@ -8,11 +8,11 @@ namespace Puck {
 		public const Type default_type = Type.Dungeon;
 
 		public enum Type {
-			Other = -1,
 			Dungeon,
 			Raid, Warfront,
 			Scenario, Island,
 			Vision,
+			Other = -1,
 		};
 
 		public Group(Type type) {
@@ -39,10 +39,6 @@ namespace Puck {
 			string separator = "\u2003";
 
 			switch (type) {
-			case Type.Other:
-				str += "group size: ";
-				str += members();
-				break;
 			case Type.Dungeon:
 				str += (tank == 0) ? box_empty : box_checked;
 				str += emoji_tank().ToString();
@@ -100,6 +96,10 @@ namespace Puck {
 						str += separator;
 					str += emoji_dps().ToString();
 				}
+				break;
+			case Type.Other:
+				str += "group size: ";
+				str += members();
 				break;
 			}
 
