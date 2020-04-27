@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
@@ -13,6 +13,39 @@ namespace Puck {
 		public Group group;
 
 		private BulletinData() { }
+
+		public override string ToString() {
+			string post = "";
+			bool is_expired = (expiry > DateTimeOffset.Now);
+
+			// @mention + group title
+			if (mention != null && !is_expired) {
+				post += mention.Mention + " ";
+			}
+			string title_str = Format.Bold(title);
+			if (is_expired)
+				title_str = Format.Strikethrough(title_str);
+			post += title_str + "\n";
+
+			// group
+			post += "group lead: " + owner.Mention + "\n";
+			post += group.ToString() + "\n";
+
+			// expiry time
+			TimeSpan expiry_round = expiry - DateTimeOffset.Now;
+			double RoundToFive(double x) { return Math.Round(x / 5.0) * 5.0; }
+			double seconds_round = RoundToFive(expiry_round.TotalSeconds);
+			expiry_round = TimeSpan.FromSeconds(seconds_round);
+
+			string delist_str =
+				"this group will be delisted in ~" +
+				expiry_round.ToString(@"mm\:ss");
+			if (is_expired)
+				delist_str = "this group has been delisted";
+			post += Format.Italicize(delist_str);
+
+			return post;
+		}
 
 		public static BulletinData Parse(DiscordMessage message) {
 			string command = message.Content;
@@ -65,6 +98,7 @@ namespace Puck {
 			return data;
 		}
 
+		// TODO: move to Puck.Program?
 		private static DiscordMember GetDiscordMember(DiscordUser user, DiscordGuild guild) {
 			foreach (DiscordMember member in guild.Members.Values) {
 				if (member.Id == user.Id)
