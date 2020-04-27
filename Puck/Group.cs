@@ -106,6 +106,19 @@ namespace Puck {
 			return str;
 		}
 
+		public static Type ParseType(string command) {
+			switch (command) {
+			case "dungeon":		return Type.Dungeon;
+			case "raid":		return Type.Raid;
+			case "warfront":	return Type.Warfront;
+			case "scenario":	return Type.Scenario;
+			case "island":		return Type.Island;
+			case "vision":		return Type.Vision;
+			case "other":		return Type.Other;
+			default:			return default_type;
+			}
+		}
+
 		private static DiscordEmoji emoji_tank() { return Program.getEmojiTank(); }
 		private static DiscordEmoji emoji_heal() { return Program.getEmojiHeal(); }
 		private static DiscordEmoji emoji_dps()  { return Program.getEmojiDps();  }
