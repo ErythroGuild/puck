@@ -14,6 +14,8 @@ namespace Puck {
 		public TimeSpan duration;
 		public TimeSpan increment;
 
+		public const string mention_none = "none";
+
 		private static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
 		private static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
 

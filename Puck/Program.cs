@@ -32,9 +32,11 @@ namespace Puck {
 			TimeSpan.FromSeconds(15).TotalMilliseconds;
 		private const ulong channel_debug_id = 489274692255875091;	// <Erythro> - #test
 
+		public static Settings GetSettings(ulong guild_id) { return settings[guild_id]; }
+
 		public static DiscordEmoji getEmojiTank() { return emoji_tank; }
 		public static DiscordEmoji getEmojiHeal() { return emoji_heal; }
-		public static DiscordEmoji getEmojiDps() { return emoji_dps; }
+		public static DiscordEmoji getEmojiDps()  { return emoji_dps;  }
 
 		private struct GroupEntry {
 			public DiscordMessage bulletin;
