@@ -5,7 +5,7 @@ namespace Puck {
 		public readonly Type type;
 		public int tank, heal, dps; // "any" is treated as dps
 
-		private const Type default_type = Type.Dungeon;
+		public const Type default_type = Type.Dungeon;
 
 		public enum Type {
 			Other = -1,
@@ -15,13 +15,13 @@ namespace Puck {
 			Vision,
 		};
 
-		public Group(Type type = default_type) {
+		public Group(Type type) {
 			this.type = type;
 			tank = 0;
 			heal = 0;
 			dps = 0;
 		}
-		public Group(int tank, int heal, int dps, Type type = default_type) {
+		public Group(int tank, int heal, int dps, Type type) {
 			this.type = type;
 			this.tank = tank;
 			this.heal = heal;
