@@ -35,7 +35,7 @@ namespace Puck {
 				string notification = "";
 				notification +=
 					"Your group " +
-					Format.Bold(data.title) +
+					data.title.Bold() +
 					" has been delisted. :white_check_mark:";
 				_ = data.owner.SendMessageAsync(notification);  // no need to await
 				// TODO: move notification to Puck.Program?

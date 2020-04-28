@@ -1,24 +1,27 @@
 ﻿namespace Puck {
-	class Format {
+	// TODO: check for existing format markers in string (and escapes)
+	static class Format {
 		// Basic text styles
-		public static string Bold(string input) {
-			return "**" + input + "**"; // TODO: check for existing `*`
+		public static string Bold(this string s) {
+			return "**" + s + "**";
 		}
 
-		public static string Italicize(string input) {
-			return "*" + input + "*";   // TODO: check for existing `*`
+		public static string Italics(this string s) {
+			return "*" + s + "*";
 		}
 
-		public static string Strikethrough(string input) {
-			return "~~" + input + "~~";
+		public static string Strike(this string s) => s.Strikethrough();
+		public static string Strikethrough(this string s) {
+			return "~~" + s + "~~";
 		}
 
-		public static string Underline(string input) {
-			return "__" + input + "__"; // TODO: check for existing `_` (italics)
+		public static string Under(this string s) => s.Underline();
+		public static string Underline(this string s) {
+			return "__" + s + "__";
 		}
 
-		public static string Spoiler(string input) {
-			return "||" + input + "||"; // TODO: check for existing link formatting
+		public static string Spoiler(this string s) {
+			return "||" + s + "||";
 		}
 
 		// Advanced text styles

@@ -22,9 +22,9 @@ namespace Puck {
 			if (mention != null && !is_expired) {
 				post += mention.Mention + " ";
 			}
-			string title_str = Format.Bold(title);
+			string title_str = title.Bold();
 			if (is_expired)
-				title_str = Format.Strikethrough(title_str);
+				title_str = title_str.Strike();
 			post += title_str + "\n";
 
 			// group
@@ -42,7 +42,7 @@ namespace Puck {
 				expiry_round.ToString(@"mm\:ss");
 			if (is_expired)
 				delist_str = "this group has been delisted";
-			post += Format.Italicize(delist_str);
+			post += delist_str.Italics();
 
 			return post;
 		}
