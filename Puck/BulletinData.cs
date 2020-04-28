@@ -16,7 +16,7 @@ namespace Puck {
 
 		public override string ToString() {
 			string post = "";
-			bool is_expired = (expiry > DateTimeOffset.Now);
+			bool is_expired = (expiry <= DateTimeOffset.Now);
 
 			// @mention + group title
 			if (mention != null && !is_expired) {
@@ -53,7 +53,7 @@ namespace Puck {
 			Settings settings = Program.GetSettings(guild.Id);
 
 			// Strip @mentions
-			Regex.Replace(command, @"<@!\d+>", "");
+			command = Regex.Replace(command, @"<@!\d+>", "");
 			command = command.Trim();
 
 			// Separate command into component parts
@@ -66,7 +66,8 @@ namespace Puck {
 			// Get DiscordRole to mention
 			DiscordRole mention = null;
 			if (command_mention == string.Empty) {
-				command_mention = settings.default_mention.Name;
+				command_mention = settings.default_mention?.Name
+					?? Settings.mention_none;
 			}
 			if (command_mention != Settings.mention_none) {
 				foreach (DiscordRole role in guild.Roles.Values) {
