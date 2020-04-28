@@ -133,7 +133,8 @@ namespace Puck {
 						return;
 
 					Console.Write("  button pressed: " + e.Emoji.GetDiscordName());
-					Console.Write(" (" + e.User.Username + ")\n");
+					Console.Write(" (" + e.User.Username);
+					Console.Write("#" + e.User.Discriminator + ")\n");
 
 					await UpdateFromControls(e);
 				}

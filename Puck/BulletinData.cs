@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
@@ -33,7 +33,7 @@ namespace Puck {
 
 			// expiry time
 			TimeSpan expiry_round = expiry - DateTimeOffset.Now;
-			double RoundToFive(double x) { return Math.Round(x / 5.0) * 5.0; }
+			static double RoundToFive(double x) { return Math.Round(x / 5.0) * 5.0; }
 			double seconds_round = RoundToFive(expiry_round.TotalSeconds);
 			expiry_round = TimeSpan.FromSeconds(seconds_round);
 
@@ -88,13 +88,13 @@ namespace Puck {
 			}
 
 			// Instantiate BulletinData
-			BulletinData data = new BulletinData();
-			data.owner = GetDiscordMember(message.Author, guild);
-			data.title = command_title;
-			data.mention = mention;
-			TimeSpan duration = settings.duration;
-			data.expiry = message.Timestamp + duration;
-			data.group = new Group(Group.ParseType(command_option));
+			BulletinData data = new BulletinData {
+				owner	= GetDiscordMember(message.Author, guild),
+				title	= command_title,
+				mention	= mention,
+				expiry	= message.Timestamp + settings.duration,
+				group	= new Group(Group.ParseType(command_option))
+			};
 
 			return data;
 		}
