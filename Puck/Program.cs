@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 
@@ -180,7 +180,26 @@ namespace Puck {
 			string emoji_str = e.Emoji.GetDiscordName();
 			BulletinData data= bulletins[message_id].data;
 
-			switch(bulletins[message_id].data.group.type) {
+			// Global controls (refresh/delist)
+			if (is_owner) {
+				switch (emoji_str) {
+				case emoji_refresh_str:
+					data.expiry += settings[e.Guild.Id].increment;
+					await bulletins[message_id].message.
+						DeleteReactionAsync(str_to_emoji[emoji_str], e.User);
+					break;
+				case emoji_delist_str:
+					data.expiry = DateTimeOffset.Now;
+					await bulletins[message_id].message.
+						DeleteReactionAsync(str_to_emoji[emoji_str], e.User);
+					break;
+				}
+				bulletins[message_id].data = data;
+				// TODO: add removal reason (for audit logs)
+			}
+
+			// Group.Type-specific controls
+			switch (bulletins[message_id].data.group.type) {
 			case Group.Type.Dungeon:
 				if (is_owner) {
 					// modulo 1/1/3, but +1 because counting "0" as a state
@@ -196,12 +215,6 @@ namespace Puck {
 					case emoji_dps_str:
 						++data.group.dps;
 						data.group.dps %= 4;
-						break;
-					case emoji_refresh_str:
-						data.expiry += settings[e.Guild.Id].increment;
-						break;
-					case emoji_delist_str:
-						data.expiry = DateTimeOffset.Now;
 						break;
 					}
 					bulletins[message_id].data = data;
