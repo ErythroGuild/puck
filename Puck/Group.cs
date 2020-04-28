@@ -84,6 +84,8 @@ namespace Puck {
 			string box_checked = "\u2611\uFE0E";
 			string separator = "\u2003";
 
+			int total = members();
+			int counted = 0;
 			switch (type) {
 			case Type.Dungeon:
 				str += (tank == 0) ? box_empty : box_checked;
@@ -114,7 +116,6 @@ namespace Puck {
 				break;
 			case Type.Scenario:
 			case Type.Island:
-				int total = members();
 				for (int i = 1; i <= 3; i++) {
 					if (i > 1)
 						str += separator;
@@ -123,22 +124,20 @@ namespace Puck {
 				}
 				break;
 			case Type.Vision:
-				int counted = 0;
-
 				for (int i = 0; i < tank && counted < 5; i++, counted++) {
-					if (counted > 1)
+					if (counted > 0)
 						str += separator;
 					str += emoji_tank().ToString();
 				}
 
 				for (int i = 0; i < heal && counted < 5; i++, counted++) {
-					if (counted > 1)
+					if (counted > 0)
 						str += separator;
 					str += emoji_heal().ToString();
 				}
 
 				for (int i = 0; i < dps && counted < 5; i++, counted++) {
-					if (counted > 1)
+					if (counted > 0)
 						str += separator;
 					str += emoji_dps().ToString();
 				}
