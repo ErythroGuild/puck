@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Entities;
+using DSharpPlus.Entities;
 
 using System;
 using System.Threading.Tasks;
@@ -18,10 +18,10 @@ namespace Puck {
 			this.message = message;
 			this.data = data;
 			
-			Timer timer = new Timer(interval_refresh);
-			timer.AutoReset = true;
-			timer.Elapsed += (o, e) => { _ = Update(); };
-			timer.Start();
+			updater = new Timer(interval_refresh);
+			updater.AutoReset = true;
+			updater.Elapsed += (o, e) => { _ = Update(); };
+			updater.Start();
 		}
 
 		public async Task Update() {
@@ -30,6 +30,8 @@ namespace Puck {
 
 			// TODO: add a warning 1:30 before delisting?
 			if (data.expiry < DateTimeOffset.Now) {
+				updater.Stop();
+
 				string notification = "";
 				notification +=
 					"Your group " +
