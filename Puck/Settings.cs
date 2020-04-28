@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
@@ -9,10 +9,11 @@ using System.Threading.Tasks;
 namespace Puck {
 	class Settings {
 		public DiscordChannel bulletin;
-
 		public DiscordRole default_mention;
 		public TimeSpan duration;
 		public TimeSpan increment;
+
+		public const string mention_none = "none";
 
 		private static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
 		private static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
