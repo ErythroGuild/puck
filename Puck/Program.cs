@@ -116,7 +116,7 @@ namespace Puck {
 #endif
 					DiscordMessage message =
 						await discord.SendMessageAsync(channel, data.ToString());
-					await CreateControls(message);
+					await CreateControls(message, data.group.type);
 
 					Bulletin bulletin = new Bulletin(message, data);
 					bulletins.Add(message.Id, bulletin);
@@ -166,10 +166,22 @@ namespace Puck {
 			Settings.Export(path_settings, settings);
 		}
 
-		static async Task CreateControls(DiscordMessage message) {
-			await message.CreateReactionAsync(emoji_tank);
-			await message.CreateReactionAsync(emoji_heal);
-			await message.CreateReactionAsync(emoji_dps);
+		static async Task CreateControls(DiscordMessage message, Group.Type type) {
+			switch (type) {
+			case Group.Type.Dungeon:
+			case Group.Type.Raid:
+			case Group.Type.Warfront:
+			case Group.Type.Vision:
+			case Group.Type.Other:
+				await message.CreateReactionAsync(emoji_tank);
+				await message.CreateReactionAsync(emoji_heal);
+				await message.CreateReactionAsync(emoji_dps);
+				break;
+			case Group.Type.Scenario:
+			case Group.Type.Island:
+				await message.CreateReactionAsync(emoji_dps);
+				break;
+			}
 			await message.CreateReactionAsync(emoji_refresh);
 			await message.CreateReactionAsync(emoji_delist);
 		}
