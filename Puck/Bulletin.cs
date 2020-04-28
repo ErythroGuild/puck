@@ -1,4 +1,4 @@
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 
 using System;
 using System.Threading.Tasks;
@@ -11,6 +11,18 @@ namespace Puck {
 		public Timer updater;
 
 		public event EventHandler<ulong> Delisted;
+
+		private const double interval_refresh = 15 * 1000;
+
+		public Bulletin(DiscordMessage message, BulletinData data) {
+			this.message = message;
+			this.data = data;
+			
+			Timer timer = new Timer(interval_refresh);
+			timer.AutoReset = true;
+			timer.Elapsed += (o, e) => { _ = Update(); };
+			timer.Start();
+		}
 
 		public async Task Update() {
 			string bulletin_new = data.ToString();
