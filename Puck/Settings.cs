@@ -1,5 +1,6 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 
 using System;
 using System.Collections.Generic;
@@ -61,7 +62,17 @@ namespace Puck {
 
 				Settings settings = new Settings(null);
 				ulong guild_id = Convert.ToUInt64(line);
-				DiscordGuild guild = await client.GetGuildAsync(guild_id);
+				DiscordGuild guild = null;
+				try {
+					guild = await client.GetGuildAsync(guild_id);
+				} catch (UnauthorizedException) {
+					Console.WriteLine(
+						"Not authorized to access guild: " +
+						guild_id.ToString());
+					for (int i = 0; i < count_keys; i++)
+						file.ReadLine();	// discard
+					continue;
+				}
 
 				Dictionary<string, string> lines = new Dictionary<string, string>();
 				for (int i = 0; i < count_keys; i++) {
