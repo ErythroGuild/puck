@@ -20,7 +20,7 @@ namespace Puck {
 		private const string path_token = @"token.txt";
 		private const string path_settings = @"settings.txt";
 
-		private static DiscordEmoji
+		private static DiscordEmoji?
 			emoji_tank,
 			emoji_heal,
 			emoji_dps,
@@ -37,6 +37,14 @@ namespace Puck {
 		public static DiscordEmoji getEmojiTank() { return emoji_tank; }
 		public static DiscordEmoji getEmojiHeal() { return emoji_heal; }
 		public static DiscordEmoji getEmojiDps()  { return emoji_dps;  }
+
+		public static DiscordMember? GetDiscordMember(DiscordUser user, DiscordGuild guild) {
+			foreach (DiscordMember member in guild.Members.Values) {
+				if (member.Id == user.Id)
+					return member;
+			}
+			return null;
+		}
 
 		static void Main() {
 			const string title_ascii =
@@ -110,10 +118,14 @@ namespace Puck {
 					Console.WriteLine("Raw message:\n" + e.Message.Content + "\n");
 
 					BulletinData data = BulletinData.Parse(e.Message);
-					DiscordChannel channel = settings[e.Guild.Id].bulletin;
+					DiscordChannel? channel = settings[e.Guild.Id].bulletin;
 #if DEBUG
 					channel = await discord.GetChannelAsync(channel_debug_id);
 #endif
+					// TODO: log error if channel not found
+					if (channel == null)
+						return;
+
 					DiscordMessage message =
 						await discord.SendMessageAsync(channel, data.ToString());
 					await CreateControls(message, data.group.type);
@@ -157,10 +169,8 @@ namespace Puck {
 		// This allows the token to be separated from source code.
 		static void InitBot() {
 			Console.WriteLine("  Reading auth token...");
-			string bot_token = "";
-			using (StreamReader file = File.OpenText(path_token)) {
-				bot_token = file.ReadLine();
-			}
+			StreamReader file = File.OpenText(path_token);
+			string? bot_token = file.ReadLine() ?? "";
 			if (bot_token != "")
 				Console.WriteLine("  Auth token found.");
 			else

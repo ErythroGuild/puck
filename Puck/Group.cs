@@ -61,12 +61,8 @@ namespace Puck {
 				} },
 			};
 
-		public Group(Type type) {
-			this.type = type;
-			tank = 0;
-			heal = 0;
-			dps = 0;
-		}
+		public Group(Type type) :
+			this(0, 0, 0, type) { }
 		public Group(int tank, int heal, int dps, Type type) {
 			this.type = type;
 			this.tank = tank;

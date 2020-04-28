@@ -8,11 +8,23 @@ namespace Puck {
 	class BulletinData {
 		public DiscordMember owner;
 		public string title;
-		public DiscordRole mention;
+		public DiscordRole? mention;
 		public DateTimeOffset expiry;
 		public Group group;
 
-		private BulletinData() { }
+		private BulletinData(
+			DiscordMember owner,
+			string title,
+			DiscordRole? mention,
+			DateTimeOffset expiry,
+			Group group
+		) {
+			this.owner = owner;
+			this.title = title;
+			this.mention = mention;
+			this.expiry = expiry;
+			this.group = group;
+		}
 
 		public override string ToString() {
 			string post = "";
@@ -64,7 +76,7 @@ namespace Puck {
 			string command_title = match.Groups[3].Value;
 
 			// Get DiscordRole to mention
-			DiscordRole mention = null;
+			DiscordRole? mention = null;
 			if (command_mention == string.Empty) {
 				command_mention = settings.default_mention?.Name
 					?? Settings.mention_none;
@@ -77,35 +89,30 @@ namespace Puck {
 					}
 				}
 				if (command_mention == "everyone") {
-					Permissions permissions =
-						GetDiscordMember(message.Author, guild)
-						.PermissionsIn(settings.bulletin);
+					Permissions? permissions =
+						Program.GetDiscordMember(message.Author, guild)
+						?.PermissionsIn(settings.bulletin)
+						?? null;
 					bool can_mention =
-						permissions.HasPermission(Permissions.MentionEveryone);
+						permissions?.HasPermission(Permissions.MentionEveryone)
+						?? false;
 					if (can_mention)
 						mention = message.Channel.Guild.EveryoneRole;
 				}
 			}
 
 			// Instantiate BulletinData
-			BulletinData data = new BulletinData {
-				owner	= GetDiscordMember(message.Author, guild),
-				title	= command_title,
-				mention	= mention,
-				expiry	= message.Timestamp + settings.duration,
-				group	= new Group(Group.ParseType(command_option))
-			};
+			BulletinData data = new BulletinData(
+				// DiscordUser -> DiscordMember is guaranteed to succeed here
+				Program.GetDiscordMember(message.Author, guild)!,
+				command_title,
+				mention,
+				message.Timestamp + settings.duration,
+				new Group(Group.ParseType(command_option))
+			);
 
 			return data;
 		}
-
-		// TODO: move to Puck.Program?
-		private static DiscordMember GetDiscordMember(DiscordUser user, DiscordGuild guild) {
-			foreach (DiscordMember member in guild.Members.Values) {
-				if (member.Id == user.Id)
-					return member;
-			}
-			return null;
-		}
+		
 	}
 }

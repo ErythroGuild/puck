@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace Puck {
 	class Settings {
-		public DiscordChannel bulletin;
-		public DiscordRole default_mention;
+		public DiscordChannel? bulletin;
+		public DiscordRole? default_mention;
 		public TimeSpan duration;
 		public TimeSpan increment;
 
@@ -19,14 +19,16 @@ namespace Puck {
 		private static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
 		private static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
 
-		public Settings(DiscordChannel bulletin) {
+		public Settings(DiscordChannel? bulletin) :
+			this(bulletin, null) { }
+		public Settings(DiscordChannel? bulletin, DiscordRole? mention) {
 			this.bulletin = bulletin;
-			default_mention = null;
+			default_mention = mention;
 			duration = duration_default;
 			increment = increment_default;
 		}
 
-		private const string serial_separator = ": ";
+		private const string key_separator = ": ";
 		private const string key_bulletin	= "bulletin channel";
 		private const string key_mention	= "mention role";
 		private const string key_duration	= "duration (min)";
@@ -40,11 +42,11 @@ namespace Puck {
 				file.WriteLine(pair.Key.ToString());
 
 				void Write(string key, string data) {
-					file.WriteLine(key + serial_separator + data);
+					file.WriteLine(key + key_separator + data);
 				}
 				Settings entry = pair.Value;
 
-				Write(key_bulletin,		entry.bulletin.Id.ToString());
+				Write(key_bulletin,		entry.bulletin?.Id.ToString() ?? "null");
 				Write(key_mention,		entry.default_mention?.Id.ToString() ?? "null");
 				Write(key_duration,		entry.duration.TotalMinutes.ToString());
 				Write(key_increment,	entry.increment.TotalMinutes.ToString());
@@ -58,11 +60,11 @@ namespace Puck {
 
 			StreamReader file = new StreamReader(path);
 			while (!file.EndOfStream) {
-				string line = file.ReadLine();
+				string line = file.ReadLine() ?? "";
 
 				Settings settings = new Settings(null);
 				ulong guild_id = Convert.ToUInt64(line);
-				DiscordGuild guild = null;
+				DiscordGuild guild;
 				try {
 					guild = await client.GetGuildAsync(guild_id);
 				} catch (UnauthorizedException) {
@@ -76,8 +78,8 @@ namespace Puck {
 
 				Dictionary<string, string> lines = new Dictionary<string, string>();
 				for (int i = 0; i < count_keys; i++) {
-					line = file.ReadLine();
-					string[] line_parts = line.Split(serial_separator, 2);
+					line = file.ReadLine() ?? "";
+					string[] line_parts = line.Split(key_separator, 2);
 					lines.Add(line_parts[0], line_parts[1]);
 				}
 
