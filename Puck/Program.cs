@@ -97,7 +97,7 @@ namespace Puck {
 						settings.Add(guild_id, settings_default);
 					}
 				}
-				ExportSettings();
+				await ExportSettings();
 			};
 
 			discord.MessageCreated += async e => {
@@ -182,8 +182,8 @@ namespace Puck {
 			});
 		}
 
-		static void ExportSettings() {
-			Settings.Export(path_settings, settings);
+		static async Task ExportSettings() {
+			await Settings.Export(path_settings, discord, settings);
 		}
 
 		static async Task CreateControls(DiscordMessage message, Group.Type type) {

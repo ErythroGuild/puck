@@ -35,7 +35,18 @@ namespace Puck {
 		private const string key_increment	= "increment (min)";
 		private const int count_keys = 4;
 
-		public static void Export(string path, Dictionary<ulong, Settings> settings) {
+		public static async Task Export(
+			string path,
+			DiscordClient client,
+			Dictionary<ulong, Settings> settings
+		) {
+			// Copy any uncached settings back into file.
+			Dictionary<ulong, Settings> settings_old = await Import(path, client);
+			foreach (ulong id_old in settings_old.Keys) {
+				if (!settings.ContainsKey(id_old))
+					settings.Add(id_old, settings_old[id_old]);
+			}
+
 			StreamWriter file = new StreamWriter(path);
 
 			foreach (KeyValuePair<ulong, Settings> pair in settings) {
@@ -55,7 +66,10 @@ namespace Puck {
 			file.Close();
 		}
 
-		public static async Task<Dictionary<ulong, Settings>> Import(string path, DiscordClient client) {
+		public static async Task<Dictionary<ulong, Settings>> Import(
+			string path,
+			DiscordClient client
+		) {
 			Dictionary<ulong, Settings> dict = new Dictionary<ulong, Settings>();
 
 			StreamReader file = new StreamReader(path);
