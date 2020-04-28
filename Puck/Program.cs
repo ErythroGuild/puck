@@ -1,12 +1,10 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Timers;
 
 namespace Puck {
 	class Program {
@@ -15,18 +13,21 @@ namespace Puck {
 		private static Dictionary<ulong, GroupEntry> bulletins =
 			new Dictionary<ulong, GroupEntry>();
 
-		private static DiscordEmoji emoji_tank, emoji_heal, emoji_dps;
-		private static DiscordEmoji emoji_refresh, emoji_delist;
-
 		private const string path_token = @"token.txt";
 		private const string path_settings = @"settings.txt";
+
+		private static DiscordEmoji
+			emoji_tank,
+			emoji_heal,
+			emoji_dps,
+			emoji_refresh,
+			emoji_delist;
 		private const string
-			emoji_tank_str = ":shield:",
-			emoji_heal_str = ":candle:",
-			emoji_dps_str = ":archery:";
-		private const string
-			emoji_refresh_str = ":arrows_counterclockwise:",
-			emoji_delist_str = ":white_check_mark:";
+			emoji_tank_str		= ":shield:",
+			emoji_heal_str		= ":candle:",
+			emoji_dps_str		= ":archery:",
+			emoji_refresh_str	= ":arrows_counterclockwise:",
+			emoji_delist_str	= ":white_check_mark:";
 
 		private static readonly double bulletin_refresh_interval =
 			TimeSpan.FromSeconds(15).TotalMilliseconds;

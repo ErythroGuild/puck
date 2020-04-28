@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Entities;
+using DSharpPlus.Entities;
 
 using System;
 using System.Threading.Tasks;
@@ -7,8 +7,8 @@ using System.Timers;
 namespace Puck {
 	class Bulletin {
 		public DiscordMessage message;
-		public Timer updater;
 		public BulletinData data;
+		public Timer updater;
 
 		public event EventHandler<ulong> Delisted;
 

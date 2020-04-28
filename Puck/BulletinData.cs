@@ -1,4 +1,4 @@
-using DSharpPlus;
+﻿using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
@@ -86,7 +86,7 @@ namespace Puck {
 				}
 			}
 
-			// Construct BulletinData
+			// Instantiate BulletinData
 			BulletinData data = new BulletinData();
 			data.owner = GetDiscordMember(message.Author, guild);
 			data.title = command_title;
