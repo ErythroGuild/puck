@@ -24,10 +24,14 @@
 			return "||" + s + "||";
 		}
 
+		public static string Code(this string s) {
+			return "`" + s + "`";
+		}
+
 		// Advanced text styles
 		// TODO: single backtick? auto-choose single-line / multiline?
 		// TODO: check for existing code formatting
-		public static string Code(string input) {
+		public static string CodeBlock(string input) {
 			return "```" + input + "```";
 		}
 

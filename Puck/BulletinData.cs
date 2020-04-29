@@ -2,7 +2,6 @@ using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
-using System.Text.RegularExpressions;
 
 namespace Puck {
 	class BulletinData {
@@ -65,21 +64,14 @@ namespace Puck {
 			return post;
 		}
 
-		public static BulletinData Parse(DiscordMessage message) {
-			string command = message.Content;
+		public static BulletinData Parse(
+			string command_option,
+			string command_mention,
+			string command_title,
+			DiscordMessage message,
+			Settings settings
+		) {
 			DiscordGuild guild = message.Channel.Guild;
-			Settings settings = Program.GetSettings(guild.Id);
-
-			// Strip @mentions
-			command = Regex.Replace(command, @"<@!\d+>", "");
-			command = command.Trim();
-
-			// Separate command into component parts
-			Regex regex_command = new Regex(@"(?:-(\S+)\s+)?(?:!(\S+)\s+)?(?:(.+))");
-			Match match = regex_command.Match(command);
-			string command_option = match.Groups[1].Value.ToLower();
-			string command_mention = match.Groups[2].Value;
-			string command_title = match.Groups[3].Value;
 
 			// Get DiscordRole to mention
 			DiscordRole? mention = null;
@@ -103,9 +95,15 @@ namespace Puck {
 						permissions?.HasPermission(Permissions.MentionEveryone)
 						?? false;
 					if (can_mention)
-						mention = message.Channel.Guild.EveryoneRole;
+						mention = guild.EveryoneRole;
 				}
 			}
+
+			Group.Type group_type;
+			if (command_option == "")
+				group_type = Group.default_type;
+			else
+				group_type = Group.ParseType(command_option);
 
 			// Instantiate BulletinData
 			BulletinData data = new BulletinData(
@@ -114,11 +112,10 @@ namespace Puck {
 				command_title,
 				mention,
 				message.Timestamp + settings.duration,
-				new Group(Group.ParseType(command_option))
+				new Group(group_type)
 			);
 
 			return data;
 		}
-		
 	}
 }

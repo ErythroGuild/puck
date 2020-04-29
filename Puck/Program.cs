@@ -5,6 +5,7 @@ using DSharpPlus.EventArgs;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Puck {
@@ -15,6 +16,8 @@ namespace Puck {
 		private static Dictionary<ulong, Settings> settings;
 		private static Dictionary<ulong, Bulletin> bulletins =
 			new Dictionary<ulong, Bulletin>();
+		private static Dictionary<ulong, DiscordMember> owners =
+			new Dictionary<ulong, DiscordMember>();
 		public static Settings GetSettings(ulong guild_id) { return settings[guild_id]; }
 
 		private const string path_token = @"token.txt";
@@ -44,6 +47,23 @@ namespace Puck {
 					return member;
 			}
 			return null;
+		}
+
+		static bool IsRequestHelp(string command) {
+			return command switch
+			{
+				"help" => true,
+				"h" => true,
+				"?" => true,
+				_ => false,
+			};
+		}
+		static bool IsRequestConfig(string command) {
+			return command switch
+			{
+				"config" => true,
+				_ => false,
+			};
 		}
 
 		static void Main() {
@@ -91,6 +111,9 @@ namespace Puck {
 				// Set up default config
 				settings = await Settings.Import(path_settings, discord);
 				foreach (ulong guild_id in discord.Guilds.Keys) {
+					DiscordGuild guild = await discord.GetGuildAsync(guild_id);
+					owners.Add(guild_id, guild.Owner);
+
 					if (!settings.ContainsKey(guild_id)) {
 						DiscordChannel channel_default = discord.Guilds[guild_id].GetDefaultChannel();
 						Settings settings_default = new Settings(channel_default);
@@ -117,7 +140,9 @@ namespace Puck {
 					_ = e.Message.Channel.TriggerTypingAsync(); // don't need to await
 					Console.WriteLine("Raw message:\n" + e.Message.Content + "\n");
 
-					BulletinData data = BulletinData.Parse(e.Message);
+					BulletinData? data = await ParseMessage(e.Message);
+					if (data == null)
+						return;
 					DiscordChannel? channel = settings[e.Guild.Id].bulletin;
 #if DEBUG
 					channel = await discord.GetChannelAsync(channel_debug_id);
@@ -184,6 +209,148 @@ namespace Puck {
 
 		static async Task ExportSettings() {
 			await Settings.Export(path_settings, discord, settings);
+		}
+
+		static async Task<BulletinData?> ParseMessage(DiscordMessage message) {
+			// Strip @mentions
+			string command = message.Content;
+			command = Regex.Replace(command, @"<@[!&]?\d+>", "");
+			command = command.Trim();
+
+			// Separate command into component parts
+			Regex regex_command = new Regex(@"^(?:-(\S+))?\s*(?:!(\S+))?\s*(?:(.+))?$");
+			Match match = regex_command.Match(command);
+			string command_option	= match.Groups[1].Value.ToLower();
+			string command_mention	= match.Groups[2].Value;
+			string command_data		= match.Groups[3].Value;
+
+			// Decide what to do with message
+			bool is_guild = (message.Channel.Type == ChannelType.Text);
+			DiscordGuild? guild = message.Channel.Guild;
+			Settings? settings = null;
+			if (guild != null)
+				settings = Program.settings[guild.Id];
+
+			// Handle help command
+			if (IsRequestHelp(command_option)) {
+				DiscordChannel channel = message.Channel;
+				if (!channel.IsPrivate) {
+					// TODO: only way this can fail is if message needing help
+					// is sent from non-guild, non-private channel (e.g. group DM)
+					DiscordMember member =
+						GetDiscordMember(message.Author, guild!)!;
+					channel = await member.CreateDmChannelAsync();
+				}
+				await SendHelpText(channel);
+				return null;
+			}
+
+			// Handle config command
+			if (IsRequestConfig(command_option)) {
+				Regex regex_config = new Regex(@"(?:<(.+?)>\s+)?(?:channel\s+(\S+)|mention\s+(.+))");
+				Match match_config = regex_config.Match(command_data);
+				// TODO: check for failed matching
+				string command_guild = match_config.Groups[1].Value;
+				string command_config =
+					match_config.Groups[2].Value +
+					match_config.Groups[3].Value;
+				// TODO: warn on specified guild not matching owned guild
+				// (possible overspecification or insufficient permissions)
+
+				DiscordUser owner = message.Author;
+				List<DiscordGuild> guilds_owned = new List<DiscordGuild>();
+				foreach (KeyValuePair<ulong, DiscordMember> pair in owners) {
+					if (pair.Value == owner)
+						guilds_owned.Add(await discord.GetGuildAsync(pair.Key));
+				}
+				DiscordChannel channel = message.Channel;
+				if (!channel.IsPrivate) {
+					command_guild = channel.Guild.Name;
+					// TODO: only time this is wrong is if message needing help
+					// is sent from non-guild, non-private channel (e.g. group DM)
+				}
+				// TODO: log error if not owner of any guilds
+				if (
+					guilds_owned.Count > 1 &&
+					command_guild != string.Empty
+				) {
+					List<DiscordGuild> guild_specified = new List<DiscordGuild>();
+					foreach (DiscordGuild guild_choose in guilds_owned) {
+						if (guild_choose.Name == command_guild) {
+							guild_specified.Add(guild_choose);
+						}
+					}
+					guilds_owned = guild_specified;
+				}
+				if (guilds_owned.Count > 1) {
+					DiscordGuild guild_example = guilds_owned[0];
+					string helptext =
+						"You are the owner of multiple guilds :confused:\n" +
+						"You'll need to specify which guild to configure, e.g.:\n" +
+						("@Puck -config <" + guild_example.Name + ">" +
+						" channel {channel-name}").Code() ;
+					await discord.SendMessageAsync(channel, helptext);
+				} else {
+					await SetConfig(guilds_owned[0], command_data);
+					await discord.SendMessageAsync(channel, "Settings updated. :white_check_mark:");
+				}
+				return null;
+			}
+
+			// Non-help/config sent to non-guild channel: Fail silently.
+			// TODO: warn user? + log
+			if (settings == null)
+				return null;	// fail if settings haven't been found
+			return BulletinData.Parse(
+				command_option,
+				command_mention,
+				command_data,
+				message,
+				settings!	// just ensured non-null with earlier check
+			);
+		}
+
+		static async Task SendHelpText(DiscordChannel channel) {
+			string helptext =
+				"(To show this help text, use the command `@Puck -help`.)\n" +
+				"`@Puck lfm AD+5` creates a group with no extra options.\n" +
+				"`@Puck !KSM JY+16 completion` pings the \"KSM\" role, if available.\n" +
+				"`@Puck -raid M BoD mount run` formats the post as a raid group.\n" +
+				"other group types include: `island`, `vision`, etc.\n" +
+				"`@Puck -config channel lfg` sets the post channel.\n" +
+				"`@Puck -config mention none` sets the default mention role.";
+			await discord.SendMessageAsync(channel, helptext);
+		}
+
+		static async Task SetConfig(DiscordGuild guild, string command) {
+			if (!settings.ContainsKey(guild.Id)) {
+				settings.Add(guild.Id, new Settings(null));
+			}
+			if (command.StartsWith("channel")) {
+				string channel_str = command.Replace("channel", "").Trim();
+				foreach (DiscordChannel channel in guild.Channels.Values) {
+					if (channel.Name == channel_str) {
+						settings[guild.Id].bulletin = channel;
+						break;
+					}
+				}
+			}
+			if (command.StartsWith("mention")) {
+				string mention_str = command.Replace("mention", "").Trim();
+				foreach (DiscordRole role in guild.Roles.Values) {
+					if (role.Name == mention_str) {
+						settings[guild.Id].default_mention = role;
+						break;
+					}
+				}
+				if (mention_str == "everyone") {
+					settings[guild.Id].default_mention = guild.EveryoneRole;
+				}
+				if (mention_str == "none") {
+					settings[guild.Id].default_mention = null;
+				}
+			}
+			await ExportSettings();
 		}
 
 		static async Task CreateControls(DiscordMessage message, Group.Type type) {
