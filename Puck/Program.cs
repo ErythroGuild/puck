@@ -121,6 +121,32 @@ namespace Puck {
 					}
 				}
 				await ExportSettings();
+
+				discord.GuildCreated += async f => {
+					DiscordGuild guild = f.Guild;
+					if (owners.ContainsKey(guild.Id))
+						owners[guild.Id] = guild.Owner;
+					else
+						owners.Add(guild.Id, guild.Owner);
+
+					settings.TryAdd(guild.Id, new Settings(null));
+					await ExportSettings();
+
+					await guild.Owner.SendMessageAsync(
+						"Hello! I've just been added to your server, " +
+						guild.Name.Bold() +
+						" :wave:\n" +
+						"Reply to this message to configure me.\n" +
+						("You can also update this later by typing " +
+						"anywhere in the server.").Italics() + "\n" +
+						"@Puck -config channel {channel-name}".Code() + "\n" +
+						"@Puck -config mention {role-name}".Code() + "\n" +
+						"The above commands will set my response channel " +
+						"and default mention.\n" +
+						"You can skip the second command, or set it to " +
+						"none".Code() + "/" + "everyone".Code() + "."
+					);
+				};
 			};
 
 			discord.MessageCreated += async e => {
