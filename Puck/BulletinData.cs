@@ -32,7 +32,13 @@ namespace Puck {
 
 			// @mention + group title
 			if (mention != null && !is_expired) {
-				post += mention.Mention + " ";
+				// @everyone role isn't actually ping-able,
+				// the actual @everyone ping is hardcoded from plaintext.
+				if (mention.Name == "@everyone")
+					post += "@everyone";
+				else
+					post += mention.Mention;
+				post += " ";
 			}
 			string title_str = title.Bold();
 			if (is_expired)
