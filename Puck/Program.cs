@@ -161,6 +161,12 @@ namespace Puck {
 						break;
 					}
 				}
+				foreach (DiscordRole role in e.Message.MentionedRoles) {
+					if (role.Name == discord.CurrentUser.Username) {
+						isMentioned = true;
+						break;
+					}
+				}
 
 				if (isMentioned) {
 					_ = e.Message.Channel.TriggerTypingAsync(); // don't need to await
