@@ -31,7 +31,7 @@ namespace Puck {
 			emoji_delist;
 		private const string
 			emoji_tank_str		= ":shield:",
-			emoji_heal_str		= ":candle:",
+			emoji_heal_str		= ":flag_ch:",
 			emoji_dps_str		= ":archery:",
 			emoji_refresh_str	= ":arrows_counterclockwise:",
 			emoji_delist_str	= ":white_check_mark:";
