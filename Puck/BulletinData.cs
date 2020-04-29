@@ -1,18 +1,29 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
-using System.Text.RegularExpressions;
 
 namespace Puck {
 	class BulletinData {
 		public DiscordMember owner;
 		public string title;
-		public DiscordRole mention;
+		public DiscordRole? mention;
 		public DateTimeOffset expiry;
 		public Group group;
 
-		private BulletinData() { }
+		private BulletinData(
+			DiscordMember owner,
+			string title,
+			DiscordRole? mention,
+			DateTimeOffset expiry,
+			Group group
+		) {
+			this.owner = owner;
+			this.title = title;
+			this.mention = mention;
+			this.expiry = expiry;
+			this.group = group;
+		}
 
 		public override string ToString() {
 			string post = "";
@@ -20,11 +31,17 @@ namespace Puck {
 
 			// @mention + group title
 			if (mention != null && !is_expired) {
-				post += mention.Mention + " ";
+				// @everyone role isn't actually ping-able,
+				// the actual @everyone ping is hardcoded from plaintext.
+				if (mention.Name == "@everyone")
+					post += "@everyone";
+				else
+					post += mention.Mention;
+				post += " ";
 			}
-			string title_str = Format.Bold(title);
+			string title_str = title.Bold();
 			if (is_expired)
-				title_str = Format.Strikethrough(title_str);
+				title_str = title_str.Strike();
 			post += title_str + "\n";
 
 			// group
@@ -33,7 +50,7 @@ namespace Puck {
 
 			// expiry time
 			TimeSpan expiry_round = expiry - DateTimeOffset.Now;
-			double RoundToFive(double x) { return Math.Round(x / 5.0) * 5.0; }
+			static double RoundToFive(double x) { return Math.Round(x / 5.0) * 5.0; }
 			double seconds_round = RoundToFive(expiry_round.TotalSeconds);
 			expiry_round = TimeSpan.FromSeconds(seconds_round);
 
@@ -42,29 +59,22 @@ namespace Puck {
 				expiry_round.ToString(@"mm\:ss");
 			if (is_expired)
 				delist_str = "this group has been delisted";
-			post += Format.Italicize(delist_str);
+			post += delist_str.Italics();
 
 			return post;
 		}
 
-		public static BulletinData Parse(DiscordMessage message) {
-			string command = message.Content;
+		public static BulletinData Parse(
+			string command_option,
+			string command_mention,
+			string command_title,
+			DiscordMessage message,
+			Settings settings
+		) {
 			DiscordGuild guild = message.Channel.Guild;
-			Settings settings = Program.GetSettings(guild.Id);
-
-			// Strip @mentions
-			command = Regex.Replace(command, @"<@!\d+>", "");
-			command = command.Trim();
-
-			// Separate command into component parts
-			Regex regex_command = new Regex(@"(?:-(\S+)\s+)?(?:!(\S+)\s+)?(?:(.+))");
-			Match match = regex_command.Match(command);
-			string command_option = match.Groups[1].Value.ToLower();
-			string command_mention = match.Groups[2].Value;
-			string command_title = match.Groups[3].Value;
 
 			// Get DiscordRole to mention
-			DiscordRole mention = null;
+			DiscordRole? mention = null;
 			if (command_mention == string.Empty) {
 				command_mention = settings.default_mention?.Name
 					?? Settings.mention_none;
@@ -77,35 +87,35 @@ namespace Puck {
 					}
 				}
 				if (command_mention == "everyone") {
-					Permissions permissions =
-						GetDiscordMember(message.Author, guild)
-						.PermissionsIn(settings.bulletin);
+					Permissions? permissions =
+						Program.GetDiscordMember(message.Author, guild)
+						?.PermissionsIn(settings.bulletin)
+						?? null;
 					bool can_mention =
-						permissions.HasPermission(Permissions.MentionEveryone);
+						permissions?.HasPermission(Permissions.MentionEveryone)
+						?? false;
 					if (can_mention)
-						mention = message.Channel.Guild.EveryoneRole;
+						mention = guild.EveryoneRole;
 				}
 			}
 
+			Group.Type group_type;
+			if (command_option == "")
+				group_type = Group.default_type;
+			else
+				group_type = Group.ParseType(command_option);
+
 			// Instantiate BulletinData
-			BulletinData data = new BulletinData();
-			data.owner = GetDiscordMember(message.Author, guild);
-			data.title = command_title;
-			data.mention = mention;
-			TimeSpan duration = settings.duration;
-			data.expiry = message.Timestamp + duration;
-			data.group = new Group(Group.ParseType(command_option));
+			BulletinData data = new BulletinData(
+				// DiscordUser -> DiscordMember is guaranteed to succeed here
+				Program.GetDiscordMember(message.Author, guild)!,
+				command_title,
+				mention,
+				message.Timestamp + settings.duration,
+				new Group(group_type)
+			);
 
 			return data;
-		}
-
-		// TODO: move to Puck.Program?
-		private static DiscordMember GetDiscordMember(DiscordUser user, DiscordGuild guild) {
-			foreach (DiscordMember member in guild.Members.Values) {
-				if (member.Id == user.Id)
-					return member;
-			}
-			return null;
 		}
 	}
 }

@@ -1,5 +1,6 @@
 using DSharpPlus;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 
 using System;
 using System.Collections.Generic;
@@ -8,8 +9,8 @@ using System.Threading.Tasks;
 
 namespace Puck {
 	class Settings {
-		public DiscordChannel bulletin;
-		public DiscordRole default_mention;
+		public DiscordChannel? bulletin;
+		public DiscordRole? default_mention;
 		public TimeSpan duration;
 		public TimeSpan increment;
 
@@ -18,32 +19,45 @@ namespace Puck {
 		private static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
 		private static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
 
-		public Settings(DiscordChannel bulletin) {
+		public Settings(DiscordChannel? bulletin) :
+			this(bulletin, null) { }
+		public Settings(DiscordChannel? bulletin, DiscordRole? mention) {
 			this.bulletin = bulletin;
-			default_mention = null;
+			default_mention = mention;
 			duration = duration_default;
 			increment = increment_default;
 		}
 
-		private const string serial_separator = ": ";
+		private const string key_separator = ": ";
 		private const string key_bulletin	= "bulletin channel";
 		private const string key_mention	= "mention role";
 		private const string key_duration	= "duration (min)";
 		private const string key_increment	= "increment (min)";
 		private const int count_keys = 4;
 
-		public static void Export(string path, Dictionary<ulong, Settings> settings) {
+		public static async Task Export(
+			string path,
+			DiscordClient client,
+			Dictionary<ulong, Settings> settings
+		) {
+			// Copy any uncached settings back into file.
+			Dictionary<ulong, Settings> settings_old = await Import(path, client);
+			foreach (ulong id_old in settings_old.Keys) {
+				if (!settings.ContainsKey(id_old))
+					settings.Add(id_old, settings_old[id_old]);
+			}
+
 			StreamWriter file = new StreamWriter(path);
 
 			foreach (KeyValuePair<ulong, Settings> pair in settings) {
 				file.WriteLine(pair.Key.ToString());
 
 				void Write(string key, string data) {
-					file.WriteLine(key + serial_separator + data);
+					file.WriteLine(key + key_separator + data);
 				}
 				Settings entry = pair.Value;
 
-				Write(key_bulletin,		entry.bulletin.Id.ToString());
+				Write(key_bulletin,		entry.bulletin?.Id.ToString() ?? "null");
 				Write(key_mention,		entry.default_mention?.Id.ToString() ?? "null");
 				Write(key_duration,		entry.duration.TotalMinutes.ToString());
 				Write(key_increment,	entry.increment.TotalMinutes.ToString());
@@ -52,21 +66,34 @@ namespace Puck {
 			file.Close();
 		}
 
-		public static async Task<Dictionary<ulong, Settings>> Import(string path, DiscordClient client) {
+		public static async Task<Dictionary<ulong, Settings>> Import(
+			string path,
+			DiscordClient client
+		) {
 			Dictionary<ulong, Settings> dict = new Dictionary<ulong, Settings>();
 
 			StreamReader file = new StreamReader(path);
 			while (!file.EndOfStream) {
-				string line = file.ReadLine();
+				string line = file.ReadLine() ?? "";
 
 				Settings settings = new Settings(null);
 				ulong guild_id = Convert.ToUInt64(line);
-				DiscordGuild guild = await client.GetGuildAsync(guild_id);
+				DiscordGuild guild;
+				try {
+					guild = await client.GetGuildAsync(guild_id);
+				} catch (UnauthorizedException) {
+					Console.WriteLine(
+						"Not authorized to access guild: " +
+						guild_id.ToString());
+					for (int i = 0; i < count_keys; i++)
+						file.ReadLine();	// discard
+					continue;
+				}
 
 				Dictionary<string, string> lines = new Dictionary<string, string>();
 				for (int i = 0; i < count_keys; i++) {
-					line = file.ReadLine();
-					string[] line_parts = line.Split(serial_separator, 2);
+					line = file.ReadLine() ?? "";
+					string[] line_parts = line.Split(key_separator, 2);
 					lines.Add(line_parts[0], line_parts[1]);
 				}
 
