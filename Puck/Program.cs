@@ -96,7 +96,7 @@ namespace Puck {
 					{ emoji_dps_str,        emoji_dps },
 					{ emoji_refresh_str,    emoji_refresh },
 					{ emoji_delist_str,     emoji_delist },
-			};
+				};
 
 				// Set "custom status" (TODO: still waiting for an actual API)
 				DiscordActivity helptext =

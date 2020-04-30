@@ -42,7 +42,6 @@ namespace Puck {
 					" has been delisted. :white_check_mark:";
 				if (do_notify_on_delist)
 					_ = data.owner.SendMessageAsync(notification);  // no need to await
-					// TODO: move notification to Puck.Program?
 
 				Delisted?.Invoke(this, message.Id);
 			}

@@ -1,5 +1,4 @@
 ﻿namespace Puck {
-	// TODO: check for existing format markers in string (and escapes)
 	static class Format {
 		// Basic text styles
 		public static string Bold(this string s) {
@@ -29,8 +28,6 @@
 		}
 
 		// Advanced text styles
-		// TODO: single backtick? auto-choose single-line / multiline?
-		// TODO: check for existing code formatting
 		public static string CodeBlock(string input) {
 			return "```" + input + "```";
 		}
@@ -40,8 +37,6 @@
 		}
 
 		// Quote styles
-		// TODO: auto-choose single/multi-line
-		// TODO: check for existing quote formatting
 		public static string QuoteLine(string input) {
 			return "> " + input;
 		}
@@ -51,7 +46,6 @@
 		}
 
 		// Link styles
-		// TODO: validate input
 		public static string NoPreview(string input) {
 			return "<" + input + ">";
 		}
