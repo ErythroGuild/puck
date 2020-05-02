@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Entities;
+using DSharpPlus.Entities;
 
 using System;
 using System.Threading.Tasks;
@@ -8,37 +8,42 @@ namespace Puck {
 	class Bulletin {
 		public DiscordMessage message;
 		public BulletinData data;
-		public Timer updater;
+		public bool do_notify_on_delist;
 
-		public event EventHandler<ulong> Delisted;
+		private Timer updater;
 
 		private const double interval_refresh = 15 * 1000;
+
+		public event EventHandler<ulong>? Delisted;
 
 		public Bulletin(DiscordMessage message, BulletinData data) {
 			this.message = message;
 			this.data = data;
-			
-			Timer timer = new Timer(interval_refresh);
-			timer.AutoReset = true;
-			timer.Elapsed += (o, e) => { _ = Update(); };
-			timer.Start();
+			do_notify_on_delist = true;
+
+			updater = new Timer(interval_refresh) {
+				AutoReset = true
+			};
+			updater.Elapsed += (o, e) => { _ = Update(); };
+			updater.Start();
 		}
 
 		public async Task Update() {
 			string bulletin_new = data.ToString();
 			await message.ModifyAsync(bulletin_new);
 
-			// TODO: add a warning 1:30 before delisting?
 			if (data.expiry < DateTimeOffset.Now) {
+				updater.Stop();
+
 				string notification = "";
 				notification +=
 					"Your group " +
-					Format.Bold(data.title) +
+					data.title.Bold() +
 					" has been delisted. :white_check_mark:";
-				_ = data.owner.SendMessageAsync(notification);  // no need to await
-				// TODO: move notification to Puck.Program?
+				if (do_notify_on_delist)
+					_ = data.owner.SendMessageAsync(notification);  // no need to await
 
-				Delisted(this, message.Id);
+				Delisted?.Invoke(this, message.Id);
 			}
 		}
 	}

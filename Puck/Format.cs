@@ -1,30 +1,34 @@
 ﻿namespace Puck {
-	class Format {
+	static class Format {
 		// Basic text styles
-		public static string Bold(string input) {
-			return "**" + input + "**"; // TODO: check for existing `*`
+		public static string Bold(this string s) {
+			return "**" + s + "**";
 		}
 
-		public static string Italicize(string input) {
-			return "*" + input + "*";   // TODO: check for existing `*`
+		public static string Italics(this string s) {
+			return "*" + s + "*";
 		}
 
-		public static string Strikethrough(string input) {
-			return "~~" + input + "~~";
+		public static string Strike(this string s) => s.Strikethrough();
+		public static string Strikethrough(this string s) {
+			return "~~" + s + "~~";
 		}
 
-		public static string Underline(string input) {
-			return "__" + input + "__"; // TODO: check for existing `_` (italics)
+		public static string Under(this string s) => s.Underline();
+		public static string Underline(this string s) {
+			return "__" + s + "__";
 		}
 
-		public static string Spoiler(string input) {
-			return "||" + input + "||"; // TODO: check for existing link formatting
+		public static string Spoiler(this string s) {
+			return "||" + s + "||";
+		}
+
+		public static string Code(this string s) {
+			return "`" + s + "`";
 		}
 
 		// Advanced text styles
-		// TODO: single backtick? auto-choose single-line / multiline?
-		// TODO: check for existing code formatting
-		public static string Code(string input) {
+		public static string CodeBlock(string input) {
 			return "```" + input + "```";
 		}
 
@@ -33,8 +37,6 @@
 		}
 
 		// Quote styles
-		// TODO: auto-choose single/multi-line
-		// TODO: check for existing quote formatting
 		public static string QuoteLine(string input) {
 			return "> " + input;
 		}
@@ -44,7 +46,6 @@
 		}
 
 		// Link styles
-		// TODO: validate input
 		public static string NoPreview(string input) {
 			return "<" + input + ">";
 		}

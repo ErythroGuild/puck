@@ -1,5 +1,7 @@
 ﻿using DSharpPlus.Entities;
 
+using System.Collections.Generic;
+
 namespace Puck {
 	class Group {
 		public readonly Type type;
@@ -15,12 +17,52 @@ namespace Puck {
 			Other = -1,
 		};
 
-		public Group(Type type) {
-			this.type = type;
-			tank = 0;
-			heal = 0;
-			dps = 0;
-		}
+		private static readonly Dictionary<string, Type> dict_commands_cache;
+		private static readonly Dictionary<Type, List<string>> dict_commands =
+			new Dictionary<Type, List<string>> {
+				{ Type.Dungeon, new List<string> {
+					"dungeon",
+					"dungeons",
+					"mythics",
+					"m0",
+					"key",
+					"keys",
+					"keystone",
+					"keystones",
+					"m+",
+					"ksm",
+				} },
+				{ Type.Raid, new List<string> {
+					"raid",
+					"raids",
+				} },
+				{ Type.Warfront, new List<string> {
+					"warfront",
+					"warfronts",
+					"wf",
+				} },
+				{ Type.Scenario, new List<string> {
+					"scenario",
+					"scenarios",
+				} },
+				{ Type.Island, new List<string> {
+					"island",
+					"islands",
+				} },
+				{ Type.Vision, new List<string> {
+					"vision",
+					"visions",
+					"hv",
+				} },
+				{ Type.Other, new List<string> {
+					"other",
+					"miscellaneous",
+					"misc",
+				} },
+			};
+
+		public Group(Type type) :
+			this(0, 0, 0, type) { }
 		public Group(int tank, int heal, int dps, Type type) {
 			this.type = type;
 			this.tank = tank;
@@ -38,6 +80,8 @@ namespace Puck {
 			string box_checked = "\u2611\uFE0E";
 			string separator = "\u2003";
 
+			int total = members();
+			int counted = 0;
 			switch (type) {
 			case Type.Dungeon:
 				str += (tank == 0) ? box_empty : box_checked;
@@ -68,7 +112,6 @@ namespace Puck {
 				break;
 			case Type.Scenario:
 			case Type.Island:
-				int total = members();
 				for (int i = 1; i <= 3; i++) {
 					if (i > 1)
 						str += separator;
@@ -77,22 +120,20 @@ namespace Puck {
 				}
 				break;
 			case Type.Vision:
-				int counted = 0;
-
 				for (int i = 0; i < tank && counted < 5; i++, counted++) {
-					if (counted > 1)
+					if (counted > 0)
 						str += separator;
 					str += emoji_tank().ToString();
 				}
 
 				for (int i = 0; i < heal && counted < 5; i++, counted++) {
-					if (counted > 1)
+					if (counted > 0)
 						str += separator;
 					str += emoji_heal().ToString();
 				}
 
 				for (int i = 0; i < dps && counted < 5; i++, counted++) {
-					if (counted > 1)
+					if (counted > 0)
 						str += separator;
 					str += emoji_dps().ToString();
 				}
@@ -107,16 +148,17 @@ namespace Puck {
 		}
 
 		public static Type ParseType(string command) {
-			switch (command) {
-			case "dungeon":		return Type.Dungeon;
-			case "raid":		return Type.Raid;
-			case "warfront":	return Type.Warfront;
-			case "scenario":	return Type.Scenario;
-			case "island":		return Type.Island;
-			case "vision":		return Type.Vision;
-			case "other":		return Type.Other;
-			default:			return default_type;
+			return dict_commands_cache[command];
+		}
+
+		static Group() {
+			Dictionary<string, Type> dict = new Dictionary<string, Type>();
+			foreach (Type type in dict_commands.Keys) {
+				foreach (string command in dict_commands[type]) {
+					dict.Add(command, type);
+				}
 			}
+			dict_commands_cache = dict;
 		}
 
 		private static DiscordEmoji emoji_tank() { return Program.getEmojiTank(); }
