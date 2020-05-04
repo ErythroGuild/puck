@@ -1,5 +1,6 @@
 ﻿using DSharpPlus.Entities;
 
+using System;
 using System.Collections.Generic;
 
 namespace Puck {
@@ -8,6 +9,10 @@ namespace Puck {
 		public int tank, heal, dps; // "any" is treated as dps
 
 		public const Type default_type = Type.Dungeon;
+
+		public enum Role {
+			Tank, Heal, Dps,
+		};
 
 		public enum Type {
 			Dungeon,
@@ -70,6 +75,28 @@ namespace Puck {
 			this.dps = dps;
 		}
 
+		public void Set(Role role, int n) {
+			switch (role) {
+			case Role.Tank:
+				tank = n;
+				break;
+			case Role.Heal:
+				heal = n;
+				break;
+			case Role.Dps:
+				dps = n;
+				break;
+			}
+		}
+		public int Get(Role role) {
+			return role switch {
+				Role.Tank => tank,
+				Role.Heal => heal,
+				Role.Dps  => dps,
+				_ => throw new ArgumentException(),
+			};
+		}
+
 		public int members() {
 			return tank + heal + dps;
 		}
@@ -79,35 +106,38 @@ namespace Puck {
 			string box_empty = "\u2610";
 			string box_checked = "\u2611\uFE0E";
 			string separator = "\u2003";
+			string emoji_tank = Program.GetEmoji(Role.Tank)?.ToString() ?? "";
+			string emoji_heal = Program.GetEmoji(Role.Heal)?.ToString() ?? "";
+			string emoji_dps  = Program.GetEmoji(Role.Dps )?.ToString() ?? "";
 
 			int total = members();
 			int counted = 0;
 			switch (type) {
 			case Type.Dungeon:
 				str += (tank == 0) ? box_empty : box_checked;
-				str += emoji_tank().ToString();
+				str += emoji_tank;
 
 				str += separator;
 				str += (heal == 0) ? box_empty : box_checked;
-				str += emoji_heal().ToString();
+				str += emoji_heal;
 
 				for (int i=1; i<=3; i++) {
 					str += separator;
 					str += (dps < i) ? box_empty : box_checked;
-					str += emoji_dps().ToString();
+					str += emoji_dps;
 				}
 				break;
 			case Type.Raid:
 			case Type.Warfront:
-				str += emoji_tank().ToString() + ": ";
+				str += emoji_tank + ": ";
 				str += tank.ToString();
 
 				str += separator;
-				str += emoji_heal().ToString() + ": ";
+				str += emoji_heal + ": ";
 				str += heal.ToString();
 
 				str += separator;
-				str += emoji_dps().ToString() + ": ";
+				str += emoji_dps + ": ";
 				str += dps.ToString();
 				break;
 			case Type.Scenario:
@@ -116,26 +146,26 @@ namespace Puck {
 					if (i > 1)
 						str += separator;
 					str += (total < i) ? box_empty : box_checked;
-					str += emoji_dps().ToString();
+					str += emoji_dps;
 				}
 				break;
 			case Type.Vision:
 				for (int i = 0; i < tank && counted < 5; i++, counted++) {
 					if (counted > 0)
 						str += separator;
-					str += emoji_tank().ToString();
+					str += emoji_tank;
 				}
 
 				for (int i = 0; i < heal && counted < 5; i++, counted++) {
 					if (counted > 0)
 						str += separator;
-					str += emoji_heal().ToString();
+					str += emoji_heal;
 				}
 
 				for (int i = 0; i < dps && counted < 5; i++, counted++) {
 					if (counted > 0)
 						str += separator;
-					str += emoji_dps().ToString();
+					str += emoji_dps;
 				}
 				break;
 			case Type.Other:
@@ -160,9 +190,5 @@ namespace Puck {
 			}
 			dict_commands_cache = dict;
 		}
-
-		private static DiscordEmoji emoji_tank() { return Program.getEmojiTank(); }
-		private static DiscordEmoji emoji_heal() { return Program.getEmojiHeal(); }
-		private static DiscordEmoji emoji_dps()  { return Program.getEmojiDps();  }
 	}
 }

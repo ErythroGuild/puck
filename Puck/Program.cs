@@ -37,9 +37,14 @@ namespace Puck {
 			emoji_delist_str	= ":white_check_mark:";
 
 		public static Dictionary<string, DiscordEmoji> str_to_emoji;
-		public static DiscordEmoji getEmojiTank() { return emoji_tank; }
-		public static DiscordEmoji getEmojiHeal() { return emoji_heal; }
-		public static DiscordEmoji getEmojiDps()  { return emoji_dps;  }
+		public static DiscordEmoji? GetEmoji(Group.Role role) {
+			return role switch {
+				Group.Role.Tank => emoji_tank,
+				Group.Role.Heal => emoji_heal,
+				Group.Role.Dps  => emoji_dps,
+				_ => null,
+			};
+		}
 
 		public static DiscordMember? GetDiscordMember(DiscordUser user, DiscordGuild guild) {
 			foreach (DiscordMember member in guild.Members.Values) {
