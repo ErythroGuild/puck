@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace Puck {
 	class Logger {
@@ -8,8 +7,9 @@ namespace Puck {
 			Debug, Info, Warning, Error
 		};
 
-		private Message? message_prev = null;
+		public bool show_timestamp = false;
 
+		private Message? message_prev = null;
 		private string indent_str = "\u2003";
 		private Dictionary<Type, ConsoleColor> type_color =
 			new Dictionary<Type, ConsoleColor> {
@@ -18,6 +18,13 @@ namespace Puck {
 				{ Type.Warning,	ConsoleColor.Yellow },
 				{ Type.Error,	ConsoleColor.Red },
 		};
+
+		private class Message {
+			public ulong? parent = null;
+			public Type type = Type.Info;
+			public int indent = 0;
+			public string data = "";
+		}
 
 		public void Log(
 			string s,
@@ -30,6 +37,13 @@ namespace Puck {
 				if (message_prev.parent == parent) {
 					Console.WriteLine();
 				}
+			}
+
+			// Optional timestamp.
+			if (show_timestamp) {
+				Console.ForegroundColor = type_color[Type.Debug];
+				Console.Write(DateTime.Now.ToString(@"\>HH\:mm\:ss") + " ");
+				Console.ResetColor();
 			}
 
 			// Indent message.
@@ -79,16 +93,7 @@ namespace Puck {
 		public void Error(string s, int indent = 0, ulong? parent = null)
 			{ Log(s, Type.Error, indent, parent); }
 
-		// TODO: need to figure out how this would interact with auto-newlines
-		//public void NewLine() {
-		//	Log(null, Type.Info, 0, "");
-		//}
-
-		private class Message {
-			public ulong? parent = null;
-			public Type type = Type.Info;
-			public int indent = 0;
-			public string data = "";
-		}
+		// Alias for Console.WriteLine()
+		public void NewLine() { Console.WriteLine(); }
 	}
 }
