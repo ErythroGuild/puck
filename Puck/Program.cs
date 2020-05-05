@@ -12,6 +12,9 @@ namespace Puck {
 	class Program {
 		private const ulong channel_debug_id = 489274692255875091;  // <Erythro> - #test
 
+		private static Logger log = new Logger();
+		public static ref Logger GetLogger() { return ref log; }
+
 		private static DiscordClient discord;
 		private static Dictionary<ulong, Settings> settings;
 		private static Dictionary<ulong, Bulletin> bulletins =
@@ -72,6 +75,7 @@ namespace Puck {
 		}
 
 		static void Main() {
+			// not using Logger for title for ease of formatting
 			const string title_ascii =
 				@"  ______           _    " + "\n" +
 				@"  | ___ \         | |   " + "\n" +
@@ -80,15 +84,19 @@ namespace Puck {
 				@"  | |  | |_| | (__|   < " + "\n" +
 				@"  \_|   \__,_|\___|_|\_\" + "\n";
 			Console.WriteLine(title_ascii);
+			log.show_timestamp = true;
 			MainAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
 		static async Task MainAsync() {
-			Console.WriteLine("Starting up...");
-			InitBot();
+			log.Info("Initializing...");
+			Connect();
 
 			discord.Ready += async e => {
-				// Initialize emojis
+				log.Info("Connected to discord.");
+				log.Info("Setting up emojis...", 1);
+
+				// Initialize emojis.
 				emoji_tank = DiscordEmoji.FromName(discord, emoji_tank_str);
 				emoji_heal = DiscordEmoji.FromName(discord, emoji_heal_str);
 				emoji_dps  = DiscordEmoji.FromName(discord, emoji_dps_str);
@@ -102,14 +110,14 @@ namespace Puck {
 					{ emoji_refresh_str,    emoji_refresh },
 					{ emoji_delist_str,     emoji_delist },
 				};
+				log.Info("Emojis set.", 1);
 
-				// Set "custom status" (TODO: still waiting for an actual API)
+				// Set "custom status".
+				log.Info("Setting bot custom status...", 1);
 				DiscordActivity helptext =
 					new DiscordActivity(@"#lfg for pings", ActivityType.Watching);
 				await discord.UpdateStatusAsync(helptext);
-
-				Console.WriteLine("Startup complete.\n");	// extra newline
-				Console.WriteLine("Monitoring messages...\n");
+				log.Info("Custom status set.", 1);
 			};
 
 			discord.GuildDownloadCompleted += async e => {
@@ -154,6 +162,7 @@ namespace Puck {
 				};
 			};
 
+			log.Info("Monitoring messages...");
 			discord.MessageCreated += async e => {
 				if (e.Message.Author.Username == discord.CurrentUser.Username) {
 					return; // never respond to self
@@ -169,32 +178,40 @@ namespace Puck {
 				foreach (DiscordRole role in e.Message.MentionedRoles) {
 					if (role.Name == discord.CurrentUser.Username) {
 						isMentioned = true;
+						log.Debug("Role mention.", 0, e.Message.Id);
 						break;
 					}
 				}
 
 				if (isMentioned) {
 					_ = e.Message.Channel.TriggerTypingAsync(); // don't need to await
-					Console.WriteLine("Raw message:\n" + e.Message.Content + "\n");
+					log.Info("Raw message:", 0, e.Message.Id);
+					log.Info(e.Message.Content, 0, e.Message.Id);
 
 					BulletinData? data = await ParseMessage(e.Message);
-					if (data == null)
+					if (data == null) {
+						log.Error("Failed to parse message.", 1, e.Message.Id);
 						return;
+					}
 					DiscordChannel? channel = settings[e.Guild.Id].bulletin;
 #if DEBUG
 					channel = await discord.GetChannelAsync(channel_debug_id);
 #endif
-					// TODO: log error if channel not found
-					if (channel == null)
+					if (channel == null) {
+						log.Error("Failed to find channel to post in.", 1, e.Message.Id);
 						return;
+					}
 
+					log.Info("Posting bulletin...", 1, e.Message.Id);
 					DiscordMessage message =
 						await discord.SendMessageAsync(channel, data.ToString());
+					log.Info("Creating controls...", 1, e.Message.Id);
 					await CreateControls(message, data.group.type);
 
 					Bulletin bulletin = new Bulletin(message, data);
 					bulletins.Add(message.Id, bulletin);
 					bulletin.Delisted += (o, message_id) => {
+						log.Info("Delisting group.", 0, message.Id);
 						bulletins.Remove(message_id);
 					};
 				}
@@ -206,18 +223,26 @@ namespace Puck {
 					if (e.User == discord.CurrentUser)
 						return;
 
-					Console.Write("  button pressed: " + e.Emoji.GetDiscordName());
-					Console.Write(" (" + e.User.Username);
-					Console.Write("#" + e.User.Discriminator + ")\n");
+					string log_str =
+						"button pressed: " + e.Emoji.GetDiscordName() +
+						" (" + e.User.Username +
+						"#" + e.User.Discriminator + ")";
+					log.Info(log_str, 1, e.Message.Id);
 
 					await UpdateFromControls(e);
 				}
 			};
 			discord.MessageReactionRemoved += async e => {
 				if (bulletins.ContainsKey(e.Message.Id)) {
-					Console.Write("  button unpressed: " + e.Emoji.GetDiscordName());
-					Console.Write(" (" + e.User.Username);
-					Console.Write("#" + e.User.Discriminator + ")\n");
+					// No need to respond to bot's own reactions
+					if (e.User == discord.CurrentUser)
+						return;
+
+					string log_str =
+						"button unpressed: " + e.Emoji.GetDiscordName() +
+						" (" + e.User.Username +
+						"#" + e.User.Discriminator + ")";
+					log.Info(log_str, 1, e.Message.Id);
 
 					await UpdateFromControls(e);
 				}
@@ -229,19 +254,39 @@ namespace Puck {
 
 		// Init discord client with token from text file.
 		// This allows the token to be separated from source code.
-		static void InitBot() {
-			Console.WriteLine("  Reading auth token...");
-			StreamReader file = File.OpenText(path_token);
-			string? bot_token = file.ReadLine() ?? "";
-			if (bot_token != "")
-				Console.WriteLine("  Auth token found.");
-			else
-				Console.WriteLine("  Auth token missing!");
+		static void Connect() {
+			log.Info("Reading authentication token...", 1);
 
+			// Open text file.
+			StreamReader? file = null;
+			try {
+				file = File.OpenText(path_token);
+			} catch (Exception) {
+				log.Error("Could not open \"token.txt\".", 1);
+			}
+
+			// Read text file.
+			string token = file?.ReadLine() ?? "";
+			if (token != "") {
+				log.Info("Authentication token found.", 1);
+				int uncensor = 4;
+				string token_censored =
+					token.Substring(0, uncensor) +
+					new string('*', token.Length - 2 * uncensor) +
+					token.Substring(token.Length - uncensor);
+				log.Debug("token: " + token_censored, 1);
+			} else {
+				log.Error("Authentication token missing!", 1);
+				log.Error("Cannot connect to Discord.", 1);
+				return;
+			}
+
+			// Instantiate discord client.
 			discord = new DiscordClient(new DiscordConfiguration {
-				Token = bot_token,
+				Token = token,
 				TokenType = TokenType.Bot
 			});
+			log.Info("Connecting to discord servers...");
 		}
 
 		static async Task ExportSettings() {
