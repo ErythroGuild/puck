@@ -8,9 +8,10 @@ namespace Puck {
 		};
 
 		public bool show_timestamp = false;
+		public Type type_minimum = Type.Debug;
 
 		private Message? message_prev = null;
-		private string indent_str = "\u2003";
+		private string indent_str = "  ";
 		private Dictionary<Type, ConsoleColor> type_color =
 			new Dictionary<Type, ConsoleColor> {
 				{ Type.Debug,	ConsoleColor.DarkGray },
@@ -34,7 +35,7 @@ namespace Puck {
 		) {
 			// Add extra padding line if previous parent differs.
 			if (message_prev != null) {
-				if (message_prev.parent == parent) {
+				if (message_prev.parent != parent) {
 					Console.WriteLine();
 				}
 			}
@@ -42,7 +43,7 @@ namespace Puck {
 			// Optional timestamp.
 			if (show_timestamp) {
 				Console.ForegroundColor = type_color[Type.Debug];
-				Console.Write(DateTime.Now.ToString(@"\>HH\:mm\:ss") + " ");
+				Console.Write(DateTime.Now.ToString(@"HH\:mm\:ss") + " ");
 				Console.ResetColor();
 			}
 
