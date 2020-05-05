@@ -19,6 +19,11 @@
 			return "__" + s + "__";
 		}
 
+		public static string NoPreview(this string s) => s.NoEmbed();
+		public static string NoEmbed(this string s) {
+			return "<" + s + ">";
+		}
+
 		public static string Spoiler(this string s) {
 			return "||" + s + "||";
 		}
@@ -27,27 +32,22 @@
 			return "`" + s + "`";
 		}
 
-		// Advanced text styles
-		public static string CodeBlock(string input) {
-			return "```" + input + "```";
+		public static string Quote(this string s) {
+			return "> " + s;
 		}
 
-		public static string Code(string input, string language) {
-			return "```" + language + "\n" + input + "\n```";
+		// Block text styles
+		public static string CodeBlock(string s) {
+			return "```" + s + "```";
 		}
 
-		// Quote styles
-		public static string QuoteLine(string input) {
-			return "> " + input;
+		public static string Code(string s, string lang) => CodeBlock(s, lang);
+		public static string CodeBlock(string s, string lang) {
+			return "```" + lang + "\n" + s + "\n```";
 		}
 
-		public static string QuoteBlock(string input) {
-			return ">>> " + input;
-		}
-
-		// Link styles
-		public static string NoPreview(string input) {
-			return "<" + input + ">";
+		public static string QuoteBlock(string s) {
+			return ">>> " + s;
 		}
 	}
 }
