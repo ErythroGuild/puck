@@ -4,7 +4,10 @@ using System.Collections.Generic;
 namespace Puck {
 	class Logger {
 		public enum Type {
-			Debug, Info, Warning, Error
+			Debug	= 0,
+			Info	= 1,
+			Warning	= 2,
+			Error	= 3,
 		};
 
 		public bool show_timestamp = false;
@@ -33,6 +36,10 @@ namespace Puck {
 			int indent = 0,
 			ulong? parent = null
 		) {
+			// Skip printing if importance is below minimum.
+			if ((int)type < (int)type_minimum)
+				{ return; }
+
 			// Add extra padding line if previous parent differs.
 			if (message_prev != null) {
 				if (message_prev.parent != parent) {
