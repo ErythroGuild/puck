@@ -10,7 +10,7 @@ There are some convenience features as well (e.g. DM notifications).
 
 ## Setup
 
-To add the bot to your server, use **[this link](1)**. The required permissions are:
+To add the bot to your server, use **[this link][1]**. The required permissions are:
 - Read Messages - *to read commands*
 - Send Messages - *to post groups*
 - Manage Messages - *to use reactions as buttons*
