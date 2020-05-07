@@ -101,6 +101,10 @@ namespace Puck {
 					string data = lines[key];
 					switch (key) {
 					case key_bulletin:
+						if (data == "null") {
+							settings.bulletin = null;
+							break;
+						}
 						ulong bulletin_id = Convert.ToUInt64(data);
 						settings.bulletin = await client.GetChannelAsync(bulletin_id);
 						break;
