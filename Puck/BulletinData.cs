@@ -80,24 +80,23 @@ namespace Puck {
 					?? Settings.mention_none;
 			}
 			if (command_mention != Settings.mention_none) {
+				if (command_mention == "everyone") {
+					mention = guild.EveryoneRole;
+				}
 				foreach (DiscordRole role in guild.Roles.Values) {
 					if (role.Name == command_mention) {
 						mention = role;
 						break;
 					}
 				}
-				if (command_mention == "everyone") {
-					Permissions? permissions =
-						message.Author.ToDiscordMember(guild)
-						?.PermissionsIn(settings.bulletin)
-						?? null;
-					bool can_mention =
-						permissions?.HasPermission(Permissions.MentionEveryone)
-						?? false;
-					if (can_mention)
-						mention = guild.EveryoneRole;
-				}
 			}
+			bool can_mention = Util.CanMention(
+				mention,
+				message.Author.ToDiscordMember(guild),
+				settings.bulletin
+			);
+			if (!can_mention)
+				mention = null;
 
 			Group.Type group_type;
 			if (command_option == "")
