@@ -153,22 +153,8 @@ namespace Puck {
 					return; // never respond to self
 				}
 
-				bool isMentioned = false;
-				foreach (DiscordUser mention in e.Message.MentionedUsers) {
-					if (mention.IsCurrent) {
-						isMentioned = true;
-						break;
-					}
-				}
-				foreach (DiscordRole role in e.Message.MentionedRoles) {
-					if (role.Name == puck.CurrentUser.Username) {
-						isMentioned = true;
-						log.Debug("Role mention.", 0, e.Message.Id);
-						break;
-					}
-				}
-
-				if (isMentioned) {
+				bool is_mentioned = IsMessageMentioned(e.Message);
+				if (is_mentioned) {
 					_ = e.Message.Channel.TriggerTypingAsync(); // don't need to await
 					log.Info("Raw message:", 0, e.Message.Id);
 					log.Info(e.Message.Content, 0, e.Message.Id);
@@ -192,7 +178,7 @@ namespace Puck {
 						await puck.SendMessageAsync(channel, data.ToString());
 					await CreateControls(message, data.group.type);
 
-					Bulletin bulletin = new Bulletin(message, data);
+					Bulletin bulletin = new Bulletin(message, data, e.Message.Id);
 					if (blocklist.Contains(e.Message.Author.Id)) {
 						bulletin.do_notify_on_delist = false;
 					}
@@ -201,6 +187,69 @@ namespace Puck {
 						log.Info("Delisting group.", 0, message.Id);
 						bulletins.Remove(message_id);
 					};
+				}
+			};
+
+			puck.MessageUpdated += async e => {
+				Bulletin? bulletin = null;
+				foreach (Bulletin bulletin_i in bulletins.Values) {
+					if (e.Message.Id == bulletin_i.original_id) {
+						bulletin = bulletin_i;
+						break;
+					}
+				}
+
+				if (bulletin != null) {
+					log.Info("Message updated!", 0, e.Message.Id);
+					bool is_mentioned = IsMessageMentioned(e.Message);
+
+					if (!is_mentioned) {
+						log.Info("New message no longer mentions this bot.", 0, e.Message.Id);
+						log.Info("Deleting previously posted bulletin.", 0, e.Message.Id);
+						bulletin.data.expiry = DateTimeOffset.Now;
+						await bulletin.Update();
+						return;
+					} else {
+						log.Info("Raw message:", 0, e.Message.Id);
+						log.Info(e.Message.Content, 0, e.Message.Id);
+						Group.Type type_old = bulletin.data.group.type;
+
+						BulletinData? data = await ParseMessage(e.Message);
+						if (data == null) {
+							log.Warning("No bulletin can be created.", 1, e.Message.Id);
+							log.Info("Deleting previously posted bulletin.", 1, e.Message.Id);
+							bulletin.data.expiry = DateTimeOffset.Now;
+							await bulletin.Update();
+							return;
+						}
+
+						log.Info("Updating bulletin...", 1, e.Message.Id);
+						bulletin.data = data;
+						bulletins[bulletin.message.Id] = bulletin;
+						await bulletin.message.ModifyAsync(bulletin.data.ToString());
+						if (bulletin.data.group.type != type_old) {
+							log.Info("Group type changed on update.", 1, e.Message.Id);
+							log.Debug("Resetting reactions...", 1, e.Message.Id);
+							await bulletin.message.DeleteAllReactionsAsync("Bulletin group type changed.");
+							await CreateControls(bulletin.message, data.group.type);
+						}
+					}
+				}
+			};
+
+			puck.MessageDeleted += async e => {
+				Bulletin? bulletin = null;
+				foreach (Bulletin bulletin_i in bulletins.Values) {
+					if (e.Message.Id == bulletin_i.original_id) {
+						bulletin = bulletin_i;
+						break;
+					}
+				}
+				if (bulletin != null) {
+					log.Info("Message deleted!", 0, e.Message.Id);
+					log.Info("Deleting previously posted bulletin.", 0, e.Message.Id);
+					bulletin.data.expiry = DateTimeOffset.Now;
+					await bulletin.Update();
 				}
 			};
 
@@ -283,6 +332,21 @@ namespace Puck {
 		// Directly exports from static member variables.
 		static async Task ExportSettings(DiscordClient client, bool do_keep_cache = true) {
 			await Settings.Export(path_settings, client, settings, do_keep_cache);
+		}
+
+		static bool IsMessageMentioned(DiscordMessage message) {
+			foreach (DiscordUser mention in message.MentionedUsers) {
+				if (mention.IsCurrent) {
+					return true;
+				}
+			}
+			foreach (DiscordRole role in message.MentionedRoles) {
+				if (role.Name == puck.CurrentUser.Username) {
+					log.Debug("Role mention.", 0, message.Id);
+					return true;
+				}
+			}
+			return false;
 		}
 
 		static async Task<BulletinData?> ParseMessage(DiscordMessage message) {

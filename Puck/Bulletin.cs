@@ -8,6 +8,7 @@ namespace Puck {
 	class Bulletin {
 		public DiscordMessage message;
 		public BulletinData data;
+		public ulong original_id;
 		public bool do_notify_on_delist;
 
 		readonly Timer updater;
@@ -17,9 +18,10 @@ namespace Puck {
 
 		public event EventHandler<ulong>? Delisted;
 
-		public Bulletin(DiscordMessage message, BulletinData data) {
+		public Bulletin(DiscordMessage message, BulletinData data, ulong original_id) {
 			this.message = message;
 			this.data = data;
+			this.original_id = original_id;
 			do_notify_on_delist = true;
 
 			updater = new Timer(interval_refresh) {
