@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 namespace Puck {
 	class Program {
 		static readonly Logger log = new Logger();
+		static readonly Blocklist blocklist = new Blocklist(path_blocklist);
 
 		// `=null!` late init -- this is supposed to be ugly
 		// only possible when guaranteed to terminate if cannot connect
@@ -20,6 +21,7 @@ namespace Puck {
 
 		const string path_token		= @"token.txt";
 		const string path_settings	= @"settings.txt";
+		const string path_blocklist = @"blocklist.txt";
 		const ulong channel_debug_id = 489274692255875091;  // <Erythro> - #test
 
 		static DiscordEmoji?
@@ -191,6 +193,9 @@ namespace Puck {
 					await CreateControls(message, data.group.type);
 
 					Bulletin bulletin = new Bulletin(message, data);
+					if (blocklist.Contains(e.Message.Author.Id)) {
+						bulletin.do_notify_on_delist = false;
+					}
 					bulletins.Add(message.Id, bulletin);
 					bulletin.Delisted += (o, message_id) => {
 						log.Info("Delisting group.", 0, message.Id);
@@ -315,6 +320,18 @@ namespace Puck {
 				return null;
 			}
 
+			// Handle normal commands
+			if (IsCommand(command_option)) {
+				DiscordChannel? channel = await Util.GetPrivateChannel(message);
+				if (channel == null) {
+					log.Error("Cannot notify user:", 0, message.Id);
+					log.Info("User: " + message.Author.Userstring(), 1, message.Id);
+					return null;
+				}
+				await HandleCommand(command_option, message.Author, channel);
+				return null;
+			}
+
 			// Create bulletin from message
 			DiscordGuild? guild = message.Channel.Guild;
 			if (guild == null) {
@@ -333,6 +350,14 @@ namespace Puck {
 				message,
 				settings
 			);
+		}
+
+		static bool IsCommand(string command) {
+			return command switch {
+				"mute"		=> true,
+				"unmute"	=> true,
+				_ => false,
+			};
 		}
 
 		static async Task SendHelpText(DiscordChannel channel) {
@@ -492,6 +517,30 @@ namespace Puck {
 
 			await ExportSettings(puck);
 			await puck.SendMessageAsync(channel, "Settings updated. :white_check_mark:");
+		}
+
+		static async Task HandleCommand(string command, DiscordUser user, DiscordChannel channel) {
+			switch (command) {
+			case "mute":
+				string text_list_add =
+					"Adding to blocklist: " + user.Userstring();
+				log.Info(text_list_add, 0, user.Id);
+				blocklist.Add(user.Id);
+				blocklist.Export(path_blocklist);
+				break;
+			case "unmute":
+				string text_list_rem =
+					"Taking off blocklist: " + user.Userstring();
+				log.Info(text_list_rem, 0, user.Id);
+				blocklist.Remove(user.Id);
+				blocklist.Export(path_blocklist);
+				break;
+			}
+			log.Info("Notifying user...", 1, channel.Id);
+			string text_update =
+				"Your preferences have been updated. :white_check_mark:";
+			await puck.SendMessageAsync(channel, text_update);
+			log.Debug("User notified.", 1, channel.Id);
 		}
 
 		static List<DiscordGuild> GetOwnedGuilds(DiscordUser owner) {
