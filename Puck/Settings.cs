@@ -84,9 +84,10 @@ namespace Puck {
 			log.Info("Importing settings: " + path);
 			StreamReader file;
 			try {
-				file = File.OpenText(path);
+				file = new StreamReader(path);
 			} catch (Exception) {
 				log.Error("Could not open \"" + path + "\".", 1);
+				log.Error("No previously saved settings loaded.", 1);
 				return dict;
 			}
 

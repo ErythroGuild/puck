@@ -247,7 +247,7 @@ namespace Puck {
 			// Open text file.
 			StreamReader file;
 			try {
-				file = File.OpenText(path_token);
+				file = new StreamReader(path_token);
 			} catch (Exception) {
 				log.Error("Could not open \"" + path_token + "\".", 1);
 				log.Error("Cannot connect to Discord.", 1);
@@ -269,6 +269,7 @@ namespace Puck {
 				log.Error("Cannot connect to Discord.", 1);
 				return;
 			}
+			file.Close();
 
 			// Instantiate discord client.
 			puck = new DiscordClient(new DiscordConfiguration {
@@ -352,6 +353,23 @@ namespace Puck {
 			);
 		}
 
+		static bool IsHelp(string command) {
+			return command switch {
+				"help"	=> true,
+				"h"		=> true,
+				"?"		=> true,
+				_ => false,
+			};
+		}
+		static bool IsConfig(string command) {
+			return command switch {
+				"config"		=> true,
+				"configuration"	=> true,
+				"conf"			=> true,
+				"cfg"			=> true,
+				_ => false,
+			};
+		}
 		static bool IsCommand(string command) {
 			return command switch {
 				"mute"		=> true,
@@ -757,26 +775,6 @@ namespace Puck {
 			}
 
 			await bulletins[message_id].Update();
-		}
-
-		static bool IsHelp(string command) {
-			return command switch
-			{
-				"help"	=> true,
-				"h"		=> true,
-				"?"		=> true,
-				_ => false,
-			};
-		}
-		static bool IsConfig(string command) {
-			return command switch
-			{
-				"config"		=> true,
-				"configuration"	=> true,
-				"conf"			=> true,
-				"cfg"			=> true,
-				_ => false,
-			};
 		}
 	}
 }

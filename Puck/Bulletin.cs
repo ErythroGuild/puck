@@ -10,7 +10,7 @@ namespace Puck {
 		public BulletinData data;
 		public bool do_notify_on_delist;
 
-		Timer updater;
+		readonly Timer updater;
 
 		static readonly Logger log = Program.GetLogger();
 		const double interval_refresh = 15 * 1000;
@@ -35,7 +35,7 @@ namespace Puck {
 			log.Debug("Updated bulletin.", 1, message.Id);
 
 			if (data.expiry < DateTimeOffset.Now) {
-				log.Info("Bulletin timed out.", 0, message.Id);
+				log.Info("Bulletin delisted.", 0, message.Id);
 				updater.Stop();
 
 				if (do_notify_on_delist) {
@@ -48,7 +48,7 @@ namespace Puck {
 					_ = data.owner.SendMessageAsync(notification);  // no need to await
 					log.Info(
 						"Sending delist notification to " +
-						data.owner.DisplayName + ".",
+						data.owner.Userstring() + ".",
 						0, message.Id
 					);
 				} else {
