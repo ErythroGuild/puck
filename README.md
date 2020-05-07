@@ -24,6 +24,9 @@ the bot has read permissions for. There are only two options:
 1. `@Puck -config channel {channel-name}`
 2. `@Puck -config mention {role-name}`
 
+You can view the current settings with:
+- `@Puck -config view`
+
 **The bot will NOT respond to any messages** until a default channel is set up.
 However, the second command is optional. If a default mention isn't set, then
 it'll be set as "none" by default. These can also be changed later by issuing
@@ -38,8 +41,9 @@ Be careful not to actually mention the channel name or role (e.g. `#lfg` or `@ke
 This sets the bot to respond in the channel `#pve-lfg`, and by default the bot
 will *not* mention any roles when creating groups (if one isn't specified).
 
-If you are the owner of multiple servers that all contain this bot, you will
-need to specify which server you are configuring. E.g.:
+If you are the owner of multiple servers that contain this bot, and the config
+command was issued through a DM, you will need to specify which server you are
+configuring the bot for. E.g.:
 
 `@Puck -config <Erythro> channel lfg`
 
