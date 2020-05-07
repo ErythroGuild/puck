@@ -212,7 +212,7 @@ namespace Puck {
 					} else {
 						log.Info("Raw message:", 0, e.Message.Id);
 						log.Info(e.Message.Content, 0, e.Message.Id);
-						Group.Type type_old = bulletin.data.group.type;
+						Group group_old = bulletin.data.group;
 
 						BulletinData? data = await ParseMessage(e.Message);
 						if (data == null) {
@@ -224,10 +224,13 @@ namespace Puck {
 						}
 
 						log.Info("Updating bulletin...", 1, e.Message.Id);
+						if (data.group.type == group_old.type) {
+							bulletin.data.group = group_old;
+						}
 						bulletin.data = data;
 						bulletins[bulletin.message.Id] = bulletin;
-						await bulletin.message.ModifyAsync(bulletin.data.ToString());
-						if (bulletin.data.group.type != type_old) {
+							await bulletin.message.ModifyAsync(bulletin.data.ToString());
+						if (bulletin.data.group.type != group_old.type) {
 							log.Info("Group type changed on update.", 1, e.Message.Id);
 							log.Debug("Resetting reactions...", 1, e.Message.Id);
 							await bulletin.message.DeleteAllReactionsAsync("Bulletin group type changed.");
