@@ -10,7 +10,7 @@ namespace Puck {
 			Error	= 3,
 		};
 
-		public bool show_timestamp = false;
+		public bool show_timestamp = true;
 		public Type type_minimum = Type.Debug;
 
 		Message? message_prev = null;
