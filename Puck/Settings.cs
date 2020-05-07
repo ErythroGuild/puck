@@ -25,6 +25,8 @@ namespace Puck {
 			increment = increment_default;
 		}
 
+		static readonly Logger log = Program.GetLogger();
+
 		static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
 		static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
 
@@ -38,18 +40,24 @@ namespace Puck {
 		public static async Task Export(
 			string path,
 			DiscordClient client,
-			Dictionary<ulong, Settings> settings
+			Dictionary<ulong, Settings> settings,
+			bool do_keep_cache = true
 		) {
 			// Copy any uncached settings back into file.
-			Dictionary<ulong, Settings> settings_old = await Import(path, client);
-			foreach (ulong id_old in settings_old.Keys) {
-				if (!settings.ContainsKey(id_old))
-					settings.Add(id_old, settings_old[id_old]);
+			if (do_keep_cache) {
+				Dictionary<ulong, Settings> settings_old = await Import(path, client);
+				foreach (ulong id_old in settings_old.Keys) {
+					if (!settings.ContainsKey(id_old))
+						settings.Add(id_old, settings_old[id_old]);
+				}
 			}
 
+			log.Info("Exporting settings...");
 			StreamWriter file = new StreamWriter(path);
 
 			foreach (KeyValuePair<ulong, Settings> pair in settings) {
+				log.Debug("Server ID: " + pair.Key.ToString(), 1);
+
 				file.WriteLine(pair.Key.ToString());
 
 				void Write(string key, string data) {
@@ -64,6 +72,7 @@ namespace Puck {
 			}
 
 			file.Close();
+			log.Info("Settings exported.");
 		}
 
 		public static async Task<Dictionary<ulong, Settings>> Import(
@@ -72,7 +81,16 @@ namespace Puck {
 		) {
 			Dictionary<ulong, Settings> dict = new Dictionary<ulong, Settings>();
 
-			StreamReader file = new StreamReader(path);
+			log.Info("Importing settings: " + path);
+			StreamReader file;
+			try {
+				file = new StreamReader(path);
+			} catch (Exception) {
+				log.Error("Could not open \"" + path + "\".", 1);
+				log.Error("No previously saved settings loaded.", 1);
+				return dict;
+			}
+
 			while (!file.EndOfStream) {
 				string line = file.ReadLine() ?? "";
 
@@ -81,10 +99,9 @@ namespace Puck {
 				DiscordGuild guild;
 				try {
 					guild = await client.GetGuildAsync(guild_id);
+					log.Info("Server: " + guild.Name, 1);
 				} catch (UnauthorizedException) {
-					Console.WriteLine(
-						"Not authorized to access guild: " +
-						guild_id.ToString());
+					log.Error("Not authorized to access guild: " + guild_id.ToString(), 1);
 					for (int i = 0; i < count_keys; i++)
 						file.ReadLine();	// discard
 					continue;
@@ -130,6 +147,7 @@ namespace Puck {
 				dict.Add(guild_id, settings);
 			}
 			file.Close();
+			log.Info("Settings import complete.");
 
 			return dict;
 		}

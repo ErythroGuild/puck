@@ -10,7 +10,7 @@ There are some convenience features as well (e.g. DM notifications).
 
 ## Setup
 
-To add the bot to your server, use **[this link](1)**. The required permissions are:
+To add the bot to your server, use **[this link][1]**. The required permissions are:
 - Read Messages - *to read commands*
 - Send Messages - *to post groups*
 - Manage Messages - *to use reactions as buttons*
@@ -23,6 +23,9 @@ configure the bot either by replying to the bot, or by messaging in any channel
 the bot has read permissions for. There are only two options:
 1. `@Puck -config channel {channel-name}`
 2. `@Puck -config mention {role-name}`
+
+You can view the current settings with:
+- `@Puck -config view`
 
 **The bot will NOT respond to any messages** until a default channel is set up.
 However, the second command is optional. If a default mention isn't set, then
@@ -38,8 +41,9 @@ Be careful not to actually mention the channel name or role (e.g. `#lfg` or `@ke
 This sets the bot to respond in the channel `#pve-lfg`, and by default the bot
 will *not* mention any roles when creating groups (if one isn't specified).
 
-If you are the owner of multiple servers that all contain this bot, you will
-need to specify which server you are configuring. E.g.:
+If you are the owner of multiple servers that contain this bot, and the config
+command was issued through a DM, you will need to specify which server you are
+configuring the bot for. E.g.:
 
 `@Puck -config <Erythro> channel lfg`
 
@@ -66,10 +70,18 @@ E.g. `!everyone`, not `!@everyone`. If no mention is specified, the default for
 the server is used, if one has been specified. `!none` can be used to suppress
 pings if a server default has been configured.
 
+You can mute/unmute delist notifications from the bot with the following pair
+of commands:
+- `@Puck -mute`
+- `@Puck -unmute`
+
 Once a group has been listed, you can use the reaction buttons to set up the
 group (depending on the type of group). Pressing the 🔄 reaction will keep the
 group listed for an additional 5 minutes, and pressing the ✅ reaction will
 immediately delist the group.
+
+You can also edit/delete your original post to update the corresponding
+bulletin, *as long as* that bulletin has not been delisted yet.
 
 ## Hosting
 

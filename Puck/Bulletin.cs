@@ -8,18 +8,20 @@ namespace Puck {
 	class Bulletin {
 		public DiscordMessage message;
 		public BulletinData data;
+		public ulong original_id;
 		public bool do_notify_on_delist;
 
-		Timer updater;
+		readonly Timer updater;
 
-		static Logger log = Program.GetLogger();
+		static readonly Logger log = Program.GetLogger();
 		const double interval_refresh = 15 * 1000;
 
 		public event EventHandler<ulong>? Delisted;
 
-		public Bulletin(DiscordMessage message, BulletinData data) {
+		public Bulletin(DiscordMessage message, BulletinData data, ulong original_id) {
 			this.message = message;
 			this.data = data;
+			this.original_id = original_id;
 			do_notify_on_delist = true;
 
 			updater = new Timer(interval_refresh) {
@@ -35,7 +37,7 @@ namespace Puck {
 			log.Debug("Updated bulletin.", 1, message.Id);
 
 			if (data.expiry < DateTimeOffset.Now) {
-				log.Info("Bulletin timed out.", 0, message.Id);
+				log.Info("Bulletin delisted.", 0, message.Id);
 				updater.Stop();
 
 				if (do_notify_on_delist) {
@@ -48,7 +50,7 @@ namespace Puck {
 					_ = data.owner.SendMessageAsync(notification);  // no need to await
 					log.Info(
 						"Sending delist notification to " +
-						data.owner.DisplayName + ".",
+						data.owner.Userstring() + ".",
 						0, message.Id
 					);
 				} else {
