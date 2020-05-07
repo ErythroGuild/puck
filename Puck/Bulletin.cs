@@ -12,7 +12,7 @@ namespace Puck {
 
 		Timer updater;
 
-		static Logger log = Program.GetLogger();
+		static readonly Logger log = Program.GetLogger();
 		const double interval_refresh = 15 * 1000;
 
 		public event EventHandler<ulong>? Delisted;

@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
 
 using System.Threading.Tasks;
 
@@ -59,6 +60,23 @@ namespace Puck {
 				channel = await member.CreateDmChannelAsync();
 			}
 			return channel;
+		}
+
+		public static bool CanMention(
+			DiscordRole? role,
+			DiscordMember? member,
+			DiscordChannel? channel
+		) {
+			if (role == null)
+				return true;
+			if (member == null || channel == null)
+				return false;
+			Permissions permissions = member.PermissionsIn(channel);
+			bool can_mention = permissions.HasPermission(Permissions.MentionEveryone);
+			if (!can_mention && role.IsMentionable) {
+				can_mention = true;
+			}
+			return can_mention;
 		}
 	}
 }
