@@ -556,7 +556,8 @@ namespace Puck {
 			}
 			log.Info("Notifying user...", 1, channel.Id);
 			string text_update =
-				"Your preferences have been updated. :white_check_mark:";
+				"Your preferences have been updated. :white_check_mark:\n" +
+				"They will apply to all future groups you post.";
 			await puck.SendMessageAsync(channel, text_update);
 			log.Debug("User notified.", 1, channel.Id);
 		}
