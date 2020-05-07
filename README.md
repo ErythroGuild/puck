@@ -70,10 +70,18 @@ E.g. `!everyone`, not `!@everyone`. If no mention is specified, the default for
 the server is used, if one has been specified. `!none` can be used to suppress
 pings if a server default has been configured.
 
+You can mute/unmute delist notifications from the bot with the following pair
+of commands:
+- `@Puck -mute`
+- `@Puck -unmute`
+
 Once a group has been listed, you can use the reaction buttons to set up the
 group (depending on the type of group). Pressing the 🔄 reaction will keep the
 group listed for an additional 5 minutes, and pressing the ✅ reaction will
 immediately delist the group.
+
+You can also edit/delete your original post to update the corresponding
+bulletin, *as long as* that bulletin has not been delisted yet.
 
 ## Hosting
 
