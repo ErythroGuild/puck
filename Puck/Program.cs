@@ -236,7 +236,7 @@ namespace Puck {
 			try {
 				file = File.OpenText(path_token);
 			} catch (Exception) {
-				log.Error("Could not open \"token.txt\".", 1);
+				log.Error("Could not open \"" + path_token + "\".", 1);
 			}
 
 			// Read text file.
@@ -447,7 +447,7 @@ namespace Puck {
 			switch (command_action) {
 			case "view":
 				string settings_text =
-					"Settings for " + guild_config.Name.Bold() + ":\n" +
+					"Settings for " + guild_config.Name.Bold() + "\n" +
 					"channel: " +
 					(settings[guild_config.Id].bulletin?.Channelstring()
 						?? "not set".Italics()) + "\n" +
