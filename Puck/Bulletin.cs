@@ -10,9 +10,10 @@ namespace Puck {
 		public BulletinData data;
 		public bool do_notify_on_delist;
 
-		private Timer updater;
+		Timer updater;
 
-		private const double interval_refresh = 15 * 1000;
+		static Logger log = Program.GetLogger();
+		const double interval_refresh = 15 * 1000;
 
 		public event EventHandler<ulong>? Delisted;
 
@@ -31,17 +32,32 @@ namespace Puck {
 		public async Task Update() {
 			string bulletin_new = data.ToString();
 			await message.ModifyAsync(bulletin_new);
+			log.Debug("Updated bulletin.", 1, message.Id);
 
 			if (data.expiry < DateTimeOffset.Now) {
+				log.Info("Bulletin timed out.", 0, message.Id);
 				updater.Stop();
 
-				string notification = "";
-				notification +=
-					"Your group " +
-					data.title.Bold() +
-					" has been delisted. :white_check_mark:";
-				if (do_notify_on_delist)
+				if (do_notify_on_delist) {
+					string notification = "";
+					notification +=
+						"Your group " +
+						data.title.Bold() +
+						" has been delisted. :white_check_mark:";
+
 					_ = data.owner.SendMessageAsync(notification);  // no need to await
+					log.Info(
+						"Sending delist notification to " +
+						data.owner.DisplayName + ".",
+						0, message.Id
+					);
+				} else {
+					log.Info(
+						"Not sending delist notification to " +
+						data.owner.DisplayName + ".",
+						0, message.Id
+					);
+				}
 
 				Delisted?.Invoke(this, message.Id);
 			}

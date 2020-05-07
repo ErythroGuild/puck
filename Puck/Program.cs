@@ -10,63 +10,45 @@ using System.Threading.Tasks;
 
 namespace Puck {
 	class Program {
-		private const ulong channel_debug_id = 489274692255875091;  // <Erythro> - #test
+		static Logger log = new Logger();
 
-		private static DiscordClient discord;
-		private static Dictionary<ulong, Settings> settings;
-		private static Dictionary<ulong, Bulletin> bulletins =
-			new Dictionary<ulong, Bulletin>();
-		private static Dictionary<ulong, DiscordMember> owners =
-			new Dictionary<ulong, DiscordMember>();
-		public static Settings GetSettings(ulong guild_id) { return settings[guild_id]; }
+		// `=null!` late init -- this is supposed to be ugly
+		// only possible when guaranteed to terminate if cannot connect
+		static DiscordClient puck = null!;
+		static Dictionary<ulong, Settings> settings		= new Dictionary<ulong, Settings>();
+		static Dictionary<ulong, Bulletin> bulletins	= new Dictionary<ulong, Bulletin>();
 
-		private const string path_token = @"token.txt";
-		private const string path_settings = @"settings.txt";
+		const string path_token		= @"token.txt";
+		const string path_settings	= @"settings.txt";
+		const ulong channel_debug_id = 489274692255875091;  // <Erythro> - #test
 
-		private static DiscordEmoji?
+		static DiscordEmoji?
 			emoji_tank,
 			emoji_heal,
 			emoji_dps,
 			emoji_refresh,
 			emoji_delist;
-		private const string
+		const string
 			emoji_tank_str		= ":shield:",
 			emoji_heal_str		= ":flag_ch:",
 			emoji_dps_str		= ":archery:",
 			emoji_refresh_str	= ":arrows_counterclockwise:",
 			emoji_delist_str	= ":white_check_mark:";
 
-		public static Dictionary<string, DiscordEmoji> str_to_emoji;
-		public static DiscordEmoji getEmojiTank() { return emoji_tank; }
-		public static DiscordEmoji getEmojiHeal() { return emoji_heal; }
-		public static DiscordEmoji getEmojiDps()  { return emoji_dps;  }
-
-		public static DiscordMember? GetDiscordMember(DiscordUser user, DiscordGuild guild) {
-			foreach (DiscordMember member in guild.Members.Values) {
-				if (member.Id == user.Id)
-					return member;
-			}
-			return null;
-		}
-
-		static bool IsRequestHelp(string command) {
-			return command switch
-			{
-				"help" => true,
-				"h" => true,
-				"?" => true,
-				_ => false,
+		public static Dictionary<string, DiscordEmoji>? str_to_emoji;
+		public static DiscordEmoji? GetEmoji(Group.Role role) {
+			return role switch {
+				Group.Role.Tank => emoji_tank,
+				Group.Role.Heal => emoji_heal,
+				Group.Role.Dps  => emoji_dps,
+				_ => null,
 			};
 		}
-		static bool IsRequestConfig(string command) {
-			return command switch
-			{
-				"config" => true,
-				_ => false,
-			};
-		}
+		public static ref Logger GetLogger() { return ref log; }
+		public static Settings GetSettings(ulong guild_id) { return settings[guild_id]; }
 
 		static void Main() {
+			// not using Logger for title for ease of formatting
 			const string title_ascii =
 				@"  ______           _    " + "\n" +
 				@"  | ___ \         | |   " + "\n" +
@@ -75,20 +57,29 @@ namespace Puck {
 				@"  | |  | |_| | (__|   < " + "\n" +
 				@"  \_|   \__,_|\___|_|\_\" + "\n";
 			Console.WriteLine(title_ascii);
+			log.show_timestamp = true;
+			log.type_minimum = Logger.Type.Debug;
 			MainAsync().ConfigureAwait(false).GetAwaiter().GetResult();
 		}
 
 		static async Task MainAsync() {
-			Console.WriteLine("Starting up...");
-			InitBot();
+			log.Info("Initializing...");
+			Connect();
+			if (puck == null) {
+				log.Error("Terminating program.");
+				return;
+			}
 
-			discord.Ready += async e => {
-				// Initialize emojis
-				emoji_tank = DiscordEmoji.FromName(discord, emoji_tank_str);
-				emoji_heal = DiscordEmoji.FromName(discord, emoji_heal_str);
-				emoji_dps  = DiscordEmoji.FromName(discord, emoji_dps_str);
-				emoji_refresh = DiscordEmoji.FromName(discord, emoji_refresh_str);
-				emoji_delist  = DiscordEmoji.FromName(discord, emoji_delist_str);
+			puck.Ready += async e => {
+				log.Info("Connected to discord.");
+				log.Debug("Setting up emojis...", 1);
+
+				// Initialize emojis.
+				emoji_tank = DiscordEmoji.FromName(puck, emoji_tank_str);
+				emoji_heal = DiscordEmoji.FromName(puck, emoji_heal_str);
+				emoji_dps  = DiscordEmoji.FromName(puck, emoji_dps_str);
+				emoji_refresh = DiscordEmoji.FromName(puck, emoji_refresh_str);
+				emoji_delist  = DiscordEmoji.FromName(puck, emoji_delist_str);
 
 				str_to_emoji = new Dictionary<string, DiscordEmoji> {
 					{ emoji_tank_str,       emoji_tank },
@@ -98,40 +89,37 @@ namespace Puck {
 					{ emoji_delist_str,     emoji_delist },
 				};
 
-				// Set "custom status" (TODO: still waiting for an actual API)
+				// Set "custom status".
+				log.Info("Setting bot custom status...", 1);
 				DiscordActivity helptext =
 					new DiscordActivity(@"#lfg for pings", ActivityType.Watching);
-				await discord.UpdateStatusAsync(helptext);
-
-				Console.WriteLine("Startup complete.\n");	// extra newline
-				Console.WriteLine("Monitoring messages...\n");
+				await puck.UpdateStatusAsync(helptext);
+				log.Info("Custom status set.", 1);
 			};
 
-			discord.GuildDownloadCompleted += async e => {
-				// Set up default config
-				settings = await Settings.Import(path_settings, discord);
-				foreach (ulong guild_id in discord.Guilds.Keys) {
-					DiscordGuild guild = await discord.GetGuildAsync(guild_id);
-					owners.Add(guild_id, guild.Owner);
+			puck.GuildDownloadCompleted += async e => {
+				log.Info("Connected to specific servers.");
+				log.Debug("Populating server-specific settings...");
 
-					if (!settings.ContainsKey(guild_id)) {
-						DiscordChannel channel_default = discord.Guilds[guild_id].GetDefaultChannel();
+				// Set up default config
+				settings = await Settings.Import(path_settings, puck);
+				foreach (DiscordGuild guild in puck.Guilds.Values) {
+					if (!settings.ContainsKey(guild.Id)) {
+						DiscordChannel channel_default = puck.Guilds[guild.Id].GetDefaultChannel();
 						Settings settings_default = new Settings(channel_default);
-						settings.Add(guild_id, settings_default);
+						settings.Add(guild.Id, settings_default);
 					}
 				}
-				await ExportSettings();
+				await ExportSettings(puck);
 
-				discord.GuildCreated += async f => {
-					DiscordGuild guild = f.Guild;
-					if (owners.ContainsKey(guild.Id))
-						owners[guild.Id] = guild.Owner;
-					else
-						owners.Add(guild.Id, guild.Owner);
+				puck.GuildCreated += async e_guild => {
+					DiscordGuild guild = e_guild.Guild;
+					log.Info("New server added! - " + guild.Name, 0, guild.Id);
 
 					settings.TryAdd(guild.Id, new Settings(null));
-					await ExportSettings();
+					await ExportSettings(puck);
 
+					log.Info("Sending config help to server owner...", 1, guild.Id);
 					await guild.Owner.SendMessageAsync(
 						"Hello! I've just been added to your server, " +
 						guild.Name.Bold() +
@@ -146,11 +134,12 @@ namespace Puck {
 						"You can skip the second command, or set it to " +
 						"none".Code() + "/" + "everyone".Code() + "."
 					);
+					log.Debug("Config help sent.", 1, guild.Id);
 				};
 			};
 
-			discord.MessageCreated += async e => {
-				if (e.Message.Author.Username == discord.CurrentUser.Username) {
+			puck.MessageCreated += async e => {
+				if (e.Message.Author.Username == puck.CurrentUser.Username) {
 					return; // never respond to self
 				}
 
@@ -162,85 +151,122 @@ namespace Puck {
 					}
 				}
 				foreach (DiscordRole role in e.Message.MentionedRoles) {
-					if (role.Name == discord.CurrentUser.Username) {
+					if (role.Name == puck.CurrentUser.Username) {
 						isMentioned = true;
+						log.Debug("Role mention.", 0, e.Message.Id);
 						break;
 					}
 				}
 
 				if (isMentioned) {
 					_ = e.Message.Channel.TriggerTypingAsync(); // don't need to await
-					Console.WriteLine("Raw message:\n" + e.Message.Content + "\n");
+					log.Info("Raw message:", 0, e.Message.Id);
+					log.Info(e.Message.Content, 0, e.Message.Id);
 
 					BulletinData? data = await ParseMessage(e.Message);
-					if (data == null)
+					if (data == null) {
+						log.Warning("No bulletin created.", 1, e.Message.Id);
 						return;
+					}
 					DiscordChannel? channel = settings[e.Guild.Id].bulletin;
 #if DEBUG
-					channel = await discord.GetChannelAsync(channel_debug_id);
+					channel = await puck.GetChannelAsync(channel_debug_id);
 #endif
-					// TODO: log error if channel not found
-					if (channel == null)
+					if (channel == null) {
+						log.Error("Failed to find channel to post in.", 1, e.Message.Id);
 						return;
+					}
 
+					log.Info("Posting bulletin...", 1, e.Message.Id);
 					DiscordMessage message =
-						await discord.SendMessageAsync(channel, data.ToString());
+						await puck.SendMessageAsync(channel, data.ToString());
 					await CreateControls(message, data.group.type);
 
 					Bulletin bulletin = new Bulletin(message, data);
 					bulletins.Add(message.Id, bulletin);
 					bulletin.Delisted += (o, message_id) => {
+						log.Info("Delisting group.", 0, message.Id);
 						bulletins.Remove(message_id);
 					};
 				}
 			};
 
-			discord.MessageReactionAdded += async e => {
+			puck.MessageReactionAdded += async e => {
 				if (bulletins.ContainsKey(e.Message.Id)) {
 					// No need to respond to bot's own reactions
-					if (e.User == discord.CurrentUser)
+					if (e.User == puck.CurrentUser)
 						return;
 
-					Console.Write("  button pressed: " + e.Emoji.GetDiscordName());
-					Console.Write(" (" + e.User.Username);
-					Console.Write("#" + e.User.Discriminator + ")\n");
+					string log_str =
+						"button pressed: " + e.Emoji.GetDiscordName() +
+						" (" + e.User.Userstring() + ")";
+					log.Info(log_str, 1, e.Message.Id);
 
 					await UpdateFromControls(e);
 				}
 			};
-			discord.MessageReactionRemoved += async e => {
+			puck.MessageReactionRemoved += async e => {
 				if (bulletins.ContainsKey(e.Message.Id)) {
-					Console.Write("  button unpressed: " + e.Emoji.GetDiscordName());
-					Console.Write(" (" + e.User.Username);
-					Console.Write("#" + e.User.Discriminator + ")\n");
+					// No need to respond to bot's own reactions
+					if (e.User == puck.CurrentUser)
+						return;
+
+					string log_str =
+						"button unpressed: " + e.Emoji.GetDiscordName() +
+						" (" + e.User.Userstring() + ")";
+					log.Info(log_str, 1, e.Message.Id);
 
 					await UpdateFromControls(e);
 				}
 			};
 
-			await discord.ConnectAsync();
+			await puck.ConnectAsync();
+			log.Info("Monitoring messages...");
+
 			await Task.Delay(-1);
 		}
 
 		// Init discord client with token from text file.
 		// This allows the token to be separated from source code.
-		static void InitBot() {
-			Console.WriteLine("  Reading auth token...");
-			StreamReader file = File.OpenText(path_token);
-			string? bot_token = file.ReadLine() ?? "";
-			if (bot_token != "")
-				Console.WriteLine("  Auth token found.");
-			else
-				Console.WriteLine("  Auth token missing!");
+		static void Connect() {
+			log.Info("Reading authentication token...", 1);
 
-			discord = new DiscordClient(new DiscordConfiguration {
-				Token = bot_token,
+			// Open text file.
+			StreamReader? file = null;
+			try {
+				file = File.OpenText(path_token);
+			} catch (Exception) {
+				log.Error("Could not open \"token.txt\".", 1);
+			}
+
+			// Read text file.
+			string token = file?.ReadLine() ?? "";
+			if (token != "") {
+				log.Info("Authentication token found.", 1);
+				int uncensor = 8;
+				string token_censored =
+					token.Substring(0, uncensor) +
+					new string('*', token.Length - 2 * uncensor) +
+					token.Substring(token.Length - uncensor);
+				log.Debug("token: " + token_censored, 1);
+			} else {
+				log.Error("Authentication token missing!", 1);
+				log.Error("Cannot connect to Discord.", 1);
+				return;
+			}
+
+			// Instantiate discord client.
+			puck = new DiscordClient(new DiscordConfiguration {
+				Token = token,
 				TokenType = TokenType.Bot
 			});
+			log.Info("Connecting to discord...");
 		}
 
-		static async Task ExportSettings() {
-			await Settings.Export(path_settings, discord, settings);
+		// Convenience wrapper for exporting current settings.
+		// Directly exports from static member variables.
+		static async Task ExportSettings(DiscordClient client) {
+			await Settings.Export(path_settings, client, settings);
 		}
 
 		static async Task<BulletinData?> ParseMessage(DiscordMessage message) {
@@ -248,101 +274,59 @@ namespace Puck {
 			string command = message.Content;
 			command = Regex.Replace(command, @"<@[!&]?\d+>", "");
 			command = command.Trim();
+			log.Debug("Trimmed message:", 1, message.Id);
+			log.Debug(command, 2, message.Id);
 
 			// Separate command into component parts
-			Regex regex_command = new Regex(@"^(?:-(\S+))?\s*(?:!(\S+))?\s*(?:(.+))?$");
-			Match match = regex_command.Match(command);
-			string command_option	= match.Groups[1].Value.ToLower();
-			string command_mention	= match.Groups[2].Value;
-			string command_data		= match.Groups[3].Value;
-
-			// Decide what to do with message
-			bool is_guild = (message.Channel.Type == ChannelType.Text);
-			DiscordGuild? guild = message.Channel.Guild;
-			Settings? settings = null;
-			if (guild != null)
-				settings = Program.settings[guild.Id];
+			Regex regex = new Regex(@"^(?:-(\S+))?\s*(?:!(\S+))?\s*(?:(.+))?$");
+			Match match = regex.Match(command);
+			string command_option  = match.Groups[1].Value.ToLower();
+			string command_mention = match.Groups[2].Value;
+			string command_data    = match.Groups[3].Value;
+			log.Debug("option:  " + command_option,  1, message.Id);
+			log.Debug("mention: " + command_mention, 1, message.Id);
+			log.Debug("data:    " + command_data,    1, message.Id);
 
 			// Handle help command
-			if (IsRequestHelp(command_option)) {
-				DiscordChannel channel = message.Channel;
-				if (!channel.IsPrivate) {
-					// TODO: only way this can fail is if message needing help
-					// is sent from non-guild, non-private channel (e.g. group DM)
-					DiscordMember member =
-						GetDiscordMember(message.Author, guild!)!;
-					channel = await member.CreateDmChannelAsync();
+			if (IsHelp(command_option)) {
+				DiscordChannel? channel = await Util.GetPrivateChannel(message);
+				if (channel == null) {
+					log.Error("Cannot send help text to user:", 0, message.Id);
+					log.Info("User: " + message.Author.Userstring(), 1, message.Id);
+					return null;
 				}
 				await SendHelpText(channel);
 				return null;
 			}
 
-			// Handle config command
-			if (IsRequestConfig(command_option)) {
-				Regex regex_config = new Regex(@"(?:<(.+?)>\s+)?(?:channel\s+(\S+)|mention\s+(.+))");
-				Match match_config = regex_config.Match(command_data);
-				// TODO: check for failed matching
-				string command_guild = match_config.Groups[1].Value;
-				string command_config =
-					match_config.Groups[2].Value +
-					match_config.Groups[3].Value;
-				// TODO: warn on specified guild not matching owned guild
-				// (possible overspecification or insufficient permissions)
-
-				DiscordUser owner = message.Author;
-				List<DiscordGuild> guilds_owned = new List<DiscordGuild>();
-				foreach (KeyValuePair<ulong, DiscordMember> pair in owners) {
-					if (pair.Value == owner)
-						guilds_owned.Add(await discord.GetGuildAsync(pair.Key));
-				}
-				DiscordChannel channel = message.Channel;
-				if (!channel.IsPrivate) {
-					command_guild = channel.Guild.Name;
-					// TODO: only time this is wrong is if message needing help
-					// is sent from non-guild, non-private channel (e.g. group DM)
-				}
-				// TODO: log error if not owner of any guilds
-				if (
-					guilds_owned.Count > 1 &&
-					command_guild != string.Empty
-				) {
-					List<DiscordGuild> guild_specified = new List<DiscordGuild>();
-					foreach (DiscordGuild guild_choose in guilds_owned) {
-						if (guild_choose.Name == command_guild) {
-							guild_specified.Add(guild_choose);
-						}
-					}
-					guilds_owned = guild_specified;
-				}
-				if (guilds_owned.Count > 1) {
-					DiscordGuild guild_example = guilds_owned[0];
-					string helptext =
-						"You are the owner of multiple guilds :confused:\n" +
-						"You'll need to specify which guild to configure, e.g.:\n" +
-						("@Puck -config <" + guild_example.Name + ">" +
-						" channel {channel-name}").Code() ;
-					await discord.SendMessageAsync(channel, helptext);
-				} else {
-					await SetConfig(guilds_owned[0], command_data);
-					await discord.SendMessageAsync(channel, "Settings updated. :white_check_mark:");
-				}
+			// Handle config commands
+			if (IsConfig(command_option)) {
+				await ParseConfig(command_data, message);
 				return null;
 			}
 
-			// Non-help/config sent to non-guild channel: Fail silently.
-			// TODO: warn user? + log
-			if (settings == null)
-				return null;	// fail if settings haven't been found
+			// Create bulletin from message
+			DiscordGuild? guild = message.Channel.Guild;
+			if (guild == null) {
+				log.Warning("Tried to post bulletin from non-server channel.", 0, message.Id);
+				return null;
+			}
+			if (!Program.settings.ContainsKey(guild.Id)) {
+				log.Warning("Tried to post bulletin to un-configured server.", 0, message.Id);
+				return null;
+			}
+			Settings settings = Program.settings[guild.Id];
 			return BulletinData.Parse(
 				command_option,
 				command_mention,
 				command_data,
 				message,
-				settings!	// just ensured non-null with earlier check
+				settings
 			);
 		}
 
 		static async Task SendHelpText(DiscordChannel channel) {
+			log.Info("Sending help text...", 1, channel.Id);
 			string helptext =
 				"(To show this help text, use the command `@Puck -help`.)\n" +
 				"`@Puck lfm AD+5` creates a group with no extra options.\n" +
@@ -351,41 +335,168 @@ namespace Puck {
 				"other group types include: `island`, `vision`, etc.\n" +
 				"`@Puck -config channel lfg` sets the post channel.\n" +
 				"`@Puck -config mention none` sets the default mention role.";
-			await discord.SendMessageAsync(channel, helptext);
+			await puck.SendMessageAsync(channel, helptext);
+			log.Debug("Help text sent.", 1, channel.Id);
 		}
 
-		static async Task SetConfig(DiscordGuild guild, string command) {
-			if (!settings.ContainsKey(guild.Id)) {
-				settings.Add(guild.Id, new Settings(null));
+		static async Task ParseConfig(string command, DiscordMessage message) {
+			command = command.Trim();
+			log.Debug("Config command:", 1, message.Id);
+			log.Debug(command, 2, message.Id);
+
+			// Separate command into component parts
+			Regex regex = new Regex(@"^(?:<(.+?)>)?\s*(?:(\S+))\s*(.+)?$");
+			Match match = regex.Match(command);
+			string command_guild  = match.Groups[1].Value;
+			string command_action = match.Groups[2].Value.ToLower();
+			string command_data   = match.Groups[3].Value;
+			log.Debug("guild:  " + command_guild,  1, message.Id);
+			log.Debug("action: " + command_action, 1, message.Id);
+			log.Debug("data:   " + command_data,   1, message.Id);
+
+			// Validate command
+			switch (command_action) {
+			case "view":
+			case "channel":
+			case "mention":
+				break;
+			default:
+				log.Warning("Invalid command", 1, message.Id);
+				return;
 			}
-			if (command.StartsWith("channel")) {
-				string channel_str = command.Replace("channel", "").Trim();
-				foreach (DiscordChannel channel in guild.Channels.Values) {
-					if (channel.Name == channel_str) {
-						settings[guild.Id].bulletin = channel;
+
+			// Fetch DM channel early (for replying to errors)
+			DiscordChannel? channel = await Util.GetPrivateChannel(message);
+			if (channel == null) {
+				log.Warning("Could not open a DM channel to user.", 0, message.Id);
+				log.Debug("User: " + message.Author.Userstring(), 0, message.Id);
+			}
+
+			// Figure out which guild is being configured
+			DiscordUser owner = message.Author;
+			List<DiscordGuild> guilds_owned = GetOwnedGuilds(owner);
+			DiscordGuild? guild_config = null;
+			switch (guilds_owned.Count) {
+			// only triggers default: if somehow List size is negative?
+			default:
+				log.Error("Server owners `List<>.Count` is negative.", 0, message.Id);
+				log.Info("User: " + owner.Userstring(), 0, message.Id);
+				return;
+			case 0:
+				log.Warning("Could not find any owned servers.", 1, message.Id);
+				log.Debug("User: " + owner.Userstring(), 1, message.Id);
+				return;
+			case var _ when (guilds_owned.Count > 1):
+				if (command_guild == string.Empty) {
+					if (!message.Channel.IsPrivate) {
+						log.Info("Detected server from message channel.", 1, message.Id);
+						guild_config = message.Channel.Guild;
+						break;
+					}
+					log.Warning("Owner of multiple guilds.", 1, message.Id);
+					log.Info("User: " + owner.Userstring(), 1, message.Id);
+					foreach (DiscordGuild guild in guilds_owned) {
+						log.Debug(guild.Name, 2, message.Id);
+					}
+					string helptext =
+						"You are the owner of multiple servers :confused:\n" +
+						"You'll need to specify which server to configure, e.g.:\n" +
+						("@Puck -config " + guilds_owned[0].Guildstring() +
+						" channel {channel-name}").Code();
+					await puck.SendMessageAsync(channel, helptext);
+					return;
+				}
+				foreach (DiscordGuild guild in guilds_owned) {
+					if (guild.Name == command_guild) {
+						guild_config = guild;
 						break;
 					}
 				}
+				if (guild_config == null) {
+					log.Warning("Could not find <" + command_guild + ">", 1, message.Id);
+					log.Info("User: " + owner.Userstring(), 1, message.Id);
+					foreach (DiscordGuild guild in guilds_owned) {
+						log.Debug(guild.Name, 2, message.Id);
+					}
+					string helptext =
+						"Could not find your specified server :confused:\n" +
+						"You may not have permissions to that server.";
+					await puck.SendMessageAsync(channel, helptext);
+					return;
+				}
+				break;
+			case 1:
+				guild_config = guilds_owned[0];
+				if (
+					guild_config.Name != command_guild &&
+					command_guild != string.Empty
+				) {
+					log.Warning("Specified server does not match owned server.", 1, message.Id);
+					log.Info("Specified server: <" + command_guild +">", 2, message.Id);
+					log.Info("Owned server:     " + guild_config.Guildstring(), 2, message.Id);
+				}
+				break;
 			}
-			if (command.StartsWith("mention")) {
-				string mention_str = command.Replace("mention", "").Trim();
-				foreach (DiscordRole role in guild.Roles.Values) {
-					if (role.Name == mention_str) {
-						settings[guild.Id].default_mention = role;
+			log.Info("Server to configure: " + guild_config.Name, 1, message.Id);
+
+			// Set configuration settings
+			log.Info("Setting configuration...", 1, message.Id);
+			if (!settings.ContainsKey(guild_config.Id)) {
+				settings.Add(guild_config.Id, new Settings(null));
+			}
+			switch (command_action) {
+			case "view":
+				string settings_text =
+					"Settings for " + guild_config.Name.Bold() + ":\n" +
+					"channel: " +
+					(settings[guild_config.Id].bulletin?.Channelstring()
+						?? "not set".Italics()) + "\n" +
+					"mention: " +
+					(settings[guild_config.Id].default_mention?.Rolestring()
+						?? "not set".Italics() + " (no ping)");
+				await puck.SendMessageAsync(channel, settings_text);
+				return;
+			case "channel":
+				foreach (DiscordChannel channel_set in guild_config.Channels.Values) {
+					if (channel_set.Name == command_data) {
+						settings[guild_config.Id].bulletin = channel_set;
 						break;
 					}
 				}
-				if (mention_str == "everyone") {
-					settings[guild.Id].default_mention = guild.EveryoneRole;
+				break;
+			case "mention":
+				foreach (DiscordRole role in guild_config.Roles.Values) {
+					if (role.Name == command_data) {
+						settings[guild_config.Id].default_mention = role;
+						break;
+					}
 				}
-				if (mention_str == "none") {
-					settings[guild.Id].default_mention = null;
+				if (command_data == "everyone") {
+					settings[guild_config.Id].default_mention = guild_config.EveryoneRole;
+				}
+				if (command_data == "none") {
+					settings[guild_config.Id].default_mention = null;
+				}
+				break;
+			}
+
+			await ExportSettings(puck);
+			await puck.SendMessageAsync(channel, "Settings updated. :white_check_mark:");
+		}
+
+		static List<DiscordGuild> GetOwnedGuilds(DiscordUser owner) {
+			List<DiscordGuild> guilds_owned = new List<DiscordGuild>();
+			foreach (DiscordGuild guild in puck.Guilds.Values) {
+				if (guild.Owner == owner) {
+					guilds_owned.Add(guild);
 				}
 			}
-			await ExportSettings();
+			return guilds_owned;
 		}
 
 		static async Task CreateControls(DiscordMessage message, Group.Type type) {
+			log.Info("Creating controls...", 1, message.Id);
+
 			switch (type) {
 			case Group.Type.Dungeon:
 			case Group.Type.Raid:
@@ -403,6 +514,8 @@ namespace Puck {
 			}
 			await message.CreateReactionAsync(emoji_refresh);
 			await message.CreateReactionAsync(emoji_delist);
+
+			log.Info("Controls created.", 1, message.Id);
 		}
 
 		static async Task UpdateFromControls(MessageReactionAddEventArgs e) {
@@ -585,6 +698,26 @@ namespace Puck {
 			}
 
 			await bulletins[message_id].Update();
+		}
+
+		static bool IsHelp(string command) {
+			return command switch
+			{
+				"help"	=> true,
+				"h"		=> true,
+				"?"		=> true,
+				_ => false,
+			};
+		}
+		static bool IsConfig(string command) {
+			return command switch
+			{
+				"config"		=> true,
+				"configuration"	=> true,
+				"conf"			=> true,
+				"cfg"			=> true,
+				_ => false,
+			};
 		}
 	}
 }
