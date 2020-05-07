@@ -11,9 +11,19 @@ namespace Puck {
 			return u.Username + "#" + u.Discriminator;
 		}
 
+		// Formats the DiscordChannel as "#name".
+		public static string Channelstring(this DiscordChannel ch) {
+			return "#" + ch.Name;
+		}
+
 		// Formats the DiscordGuild as "<Name>".
 		public static string Guildstring(this DiscordGuild g) {
 			return "<" + g.Name + ">";
+		}
+
+		// Formats the DiscordRole as "@Name".
+		public static string Rolestring(this DiscordRole r) {
+			return "@" + r.Name;
 		}
 
 		// Casts DiscordUser to DiscordMember w/ a given guild.
