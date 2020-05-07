@@ -10,11 +10,10 @@ namespace Puck {
 		public BulletinData data;
 		public bool do_notify_on_delist;
 
-		private Timer updater;
+		Timer updater;
 
-		private static Logger log = Program.GetLogger();
-
-		private const double interval_refresh = 15 * 1000;
+		static Logger log = Program.GetLogger();
+		const double interval_refresh = 15 * 1000;
 
 		public event EventHandler<ulong>? Delisted;
 

@@ -22,13 +22,13 @@ namespace Puck {
 		const string path_settings	= @"settings.txt";
 		const ulong channel_debug_id = 489274692255875091;  // <Erythro> - #test
 
-		private static DiscordEmoji?
+		static DiscordEmoji?
 			emoji_tank,
 			emoji_heal,
 			emoji_dps,
 			emoji_refresh,
 			emoji_delist;
-		private const string
+		const string
 			emoji_tank_str		= ":shield:",
 			emoji_heal_str		= ":flag_ch:",
 			emoji_dps_str		= ":archery:",

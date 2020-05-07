@@ -16,9 +16,6 @@ namespace Puck {
 
 		public const string mention_none = "none";
 
-		private static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
-		private static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
-
 		public Settings(DiscordChannel? bulletin) :
 			this(bulletin, null) { }
 		public Settings(DiscordChannel? bulletin, DiscordRole? mention) {
@@ -28,12 +25,15 @@ namespace Puck {
 			increment = increment_default;
 		}
 
-		private const string key_separator = ": ";
-		private const string key_bulletin	= "bulletin channel";
-		private const string key_mention	= "mention role";
-		private const string key_duration	= "duration (min)";
-		private const string key_increment	= "increment (min)";
-		private const int count_keys = 4;
+		static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
+		static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
+
+		const string key_separator = ": ";
+		const string key_bulletin	= "bulletin channel";
+		const string key_mention	= "mention role";
+		const string key_duration	= "duration (min)";
+		const string key_increment	= "increment (min)";
+		const int count_keys = 4;
 
 		public static async Task Export(
 			string path,

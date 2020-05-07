@@ -22,8 +22,8 @@ namespace Puck {
 			Other = -1,
 		};
 
-		private static readonly Dictionary<string, Type> dict_commands_cache;
-		private static readonly Dictionary<Type, List<string>> dict_commands =
+		static readonly Dictionary<string, Type> dict_commands_cache;
+		static readonly Dictionary<Type, List<string>> dict_commands =
 			new Dictionary<Type, List<string>> {
 				{ Type.Dungeon, new List<string> {
 					"dungeon",
@@ -177,9 +177,8 @@ namespace Puck {
 			return str;
 		}
 
-		public static Type ParseType(string command) {
-			return dict_commands_cache[command];
-		}
+		public static Type ParseType(string command)
+			{ return dict_commands_cache[command]; }
 
 		static Group() {
 			Dictionary<string, Type> dict = new Dictionary<string, Type>();
