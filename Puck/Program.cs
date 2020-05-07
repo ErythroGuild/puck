@@ -200,12 +200,12 @@ namespace Puck {
 				}
 
 				if (bulletin != null) {
-					log.Info("Message updated!", 0, e.Message.Id);
+					log.Info("Existing message updated.", 0, e.Message.Id);
 					bool is_mentioned = IsMessageMentioned(e.Message);
 
 					if (!is_mentioned) {
 						log.Info("New message no longer mentions this bot.", 0, e.Message.Id);
-						log.Info("Deleting previously posted bulletin.", 0, e.Message.Id);
+						log.Info("Delisting previously posted bulletin.", 0, e.Message.Id);
 						bulletin.data.expiry = DateTimeOffset.Now;
 						await bulletin.Update();
 						return;
@@ -217,13 +217,13 @@ namespace Puck {
 						BulletinData? data = await ParseMessage(e.Message);
 						if (data == null) {
 							log.Warning("No bulletin can be created.", 1, e.Message.Id);
-							log.Info("Deleting previously posted bulletin.", 1, e.Message.Id);
+							log.Info("Delisting previously posted bulletin.", 1, e.Message.Id);
 							bulletin.data.expiry = DateTimeOffset.Now;
 							await bulletin.Update();
 							return;
 						}
 
-						log.Info("Updating bulletin...", 1, e.Message.Id);
+						log.Info("Updating bulletin...", 0, e.Message.Id);
 						if (data.group.type == group_old.type) {
 							bulletin.data.group = group_old;
 						}
@@ -249,7 +249,7 @@ namespace Puck {
 					}
 				}
 				if (bulletin != null) {
-					log.Info("Message deleted!", 0, e.Message.Id);
+					log.Info("Existing message deleted.", 0, e.Message.Id);
 					log.Info("Deleting previously posted bulletin...", 1, e.Message.Id);
 					bulletin.data.expiry = DateTimeOffset.Now;
 					await bulletin.Update();
