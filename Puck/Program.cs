@@ -136,6 +136,14 @@ namespace Puck {
 					);
 					log.Debug("Config help sent.", 1, guild.Id);
 				};
+
+				puck.GuildDeleted += async e_guild => {
+					DiscordGuild guild = e_guild.Guild;
+					log.Info("Removed from server: " + guild.Name, 0, guild.Id);
+					log.Info("Removing old settings...", 0, guild.Id);
+					settings.Remove(guild.Id);
+					await ExportSettings(puck, false);
+				};
 			};
 
 			puck.MessageCreated += async e => {
@@ -265,8 +273,8 @@ namespace Puck {
 
 		// Convenience wrapper for exporting current settings.
 		// Directly exports from static member variables.
-		static async Task ExportSettings(DiscordClient client) {
-			await Settings.Export(path_settings, client, settings);
+		static async Task ExportSettings(DiscordClient client, bool do_keep_cache = true) {
+			await Settings.Export(path_settings, client, settings, do_keep_cache);
 		}
 
 		static async Task<BulletinData?> ParseMessage(DiscordMessage message) {

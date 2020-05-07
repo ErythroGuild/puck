@@ -40,13 +40,16 @@ namespace Puck {
 		public static async Task Export(
 			string path,
 			DiscordClient client,
-			Dictionary<ulong, Settings> settings
+			Dictionary<ulong, Settings> settings,
+			bool do_keep_cache = true
 		) {
 			// Copy any uncached settings back into file.
-			Dictionary<ulong, Settings> settings_old = await Import(path, client);
-			foreach (ulong id_old in settings_old.Keys) {
-				if (!settings.ContainsKey(id_old))
-					settings.Add(id_old, settings_old[id_old]);
+			if (do_keep_cache) {
+				Dictionary<ulong, Settings> settings_old = await Import(path, client);
+				foreach (ulong id_old in settings_old.Keys) {
+					if (!settings.ContainsKey(id_old))
+						settings.Add(id_old, settings_old[id_old]);
+				}
 			}
 
 			log.Info("Exporting settings...");
