@@ -341,7 +341,7 @@ namespace Puck {
 
 		static async Task ParseConfig(string command, DiscordMessage message) {
 			// Separate command into component parts
-			Regex regex = new Regex(@"^(?:<(.+?)>)?\s*(?:(\S+))\s*(.+)$");
+			Regex regex = new Regex(@"^(?:<(.+?)>)?\s*(?:(\S+))\s*(.+)?$");
 			Match match = regex.Match(command);
 			string command_guild  = match.Groups[1].Value;
 			string command_action = match.Groups[2].Value.ToLower();
@@ -384,6 +384,11 @@ namespace Puck {
 				return;
 			case var _ when (guilds_owned.Count > 1):
 				if (command_guild == string.Empty) {
+					if (!message.Channel.IsPrivate) {
+						log.Info("Detected server from message channel.", 1, message.Id);
+						guild_config = message.Channel.Guild;
+						break;
+					}
 					log.Warning("Owner of multiple guilds.", 1, message.Id);
 					log.Info("User: " + owner.Userstring(), 1, message.Id);
 					foreach (DiscordGuild guild in guilds_owned) {
