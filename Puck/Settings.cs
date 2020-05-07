@@ -25,7 +25,7 @@ namespace Puck {
 			increment = increment_default;
 		}
 
-		static Logger log = Program.GetLogger();
+		static readonly Logger log = Program.GetLogger();
 
 		static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
 		static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
@@ -82,9 +82,9 @@ namespace Puck {
 			Dictionary<ulong, Settings> dict = new Dictionary<ulong, Settings>();
 
 			log.Info("Importing settings: " + path);
-			StreamReader? file = null;
+			StreamReader file;
 			try {
-				file = new StreamReader(path);
+				file = File.OpenText(path);
 			} catch (Exception) {
 				log.Error("Could not open \"" + path + "\".", 1);
 				return dict;

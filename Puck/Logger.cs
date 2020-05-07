@@ -13,9 +13,9 @@ namespace Puck {
 		public bool show_timestamp = false;
 		public Type type_minimum = Type.Debug;
 
-		private Message? message_prev = null;
-		private string indent_str = "  ";
-		private Dictionary<Type, ConsoleColor> type_color =
+		Message? message_prev = null;
+		const string indent_str = "  ";
+		readonly Dictionary<Type, ConsoleColor> type_color =
 			new Dictionary<Type, ConsoleColor> {
 				{ Type.Debug,	ConsoleColor.DarkGray },
 				{ Type.Info,	ConsoleColor.Gray },
@@ -23,7 +23,7 @@ namespace Puck {
 				{ Type.Error,	ConsoleColor.Red },
 		};
 
-		private class Message {
+		class Message {
 			public ulong? parent = null;
 			public Type type = Type.Info;
 			public int indent = 0;

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Puck {
 	class Program {
-		static Logger log = new Logger();
+		static readonly Logger log = new Logger();
 
 		// `=null!` late init -- this is supposed to be ugly
 		// only possible when guaranteed to terminate if cannot connect
@@ -44,7 +44,7 @@ namespace Puck {
 				_ => null,
 			};
 		}
-		public static ref Logger GetLogger() { return ref log; }
+		public static ref readonly Logger GetLogger() { return ref log; }
 		public static Settings GetSettings(ulong guild_id) { return settings[guild_id]; }
 
 		static void Main() {
@@ -240,15 +240,17 @@ namespace Puck {
 			log.Info("Reading authentication token...", 1);
 
 			// Open text file.
-			StreamReader? file = null;
+			StreamReader file;
 			try {
 				file = File.OpenText(path_token);
 			} catch (Exception) {
 				log.Error("Could not open \"" + path_token + "\".", 1);
+				log.Error("Cannot connect to Discord.", 1);
+				return;
 			}
 
 			// Read text file.
-			string token = file?.ReadLine() ?? "";
+			string token = file.ReadLine() ?? "";
 			if (token != "") {
 				log.Info("Authentication token found.", 1);
 				int uncensor = 8;
