@@ -88,7 +88,7 @@ namespace Puck {
 				}
 				if (command_mention == "everyone") {
 					Permissions? permissions =
-						Program.GetDiscordMember(message.Author, guild)
+						message.Author.ToDiscordMember(guild)
 						?.PermissionsIn(settings.bulletin)
 						?? null;
 					bool can_mention =
@@ -108,7 +108,7 @@ namespace Puck {
 			// Instantiate BulletinData
 			BulletinData data = new BulletinData(
 				// DiscordUser -> DiscordMember is guaranteed to succeed here
-				Program.GetDiscordMember(message.Author, guild)!,
+				message.Author.ToDiscordMember(guild)!,
 				command_title,
 				mention,
 				message.Timestamp + settings.duration,
