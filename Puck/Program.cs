@@ -250,9 +250,11 @@ namespace Puck {
 				}
 				if (bulletin != null) {
 					log.Info("Message deleted!", 0, e.Message.Id);
-					log.Info("Deleting previously posted bulletin.", 0, e.Message.Id);
+					log.Info("Deleting previously posted bulletin...", 1, e.Message.Id);
 					bulletin.data.expiry = DateTimeOffset.Now;
 					await bulletin.Update();
+					await bulletin.message.DeleteAsync("Original post deleted.");
+					log.Debug("Bulletin deleted.", 1, e.Message.Id);
 				}
 			};
 
