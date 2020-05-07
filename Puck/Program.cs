@@ -122,7 +122,7 @@ namespace Puck {
 					log.Info("Sending config help to server owner...", 1, guild.Id);
 					await guild.Owner.SendMessageAsync(
 						"Hello! I've just been added to your server, " +
-						guild.Guildstring().Bold() +
+						guild.Name.Bold() +
 						" :wave:\n" +
 						"Reply to this message to configure me.\n" +
 						("You can also update this later by typing " +
@@ -340,6 +340,10 @@ namespace Puck {
 		}
 
 		static async Task ParseConfig(string command, DiscordMessage message) {
+			command = command.Trim();
+			log.Debug("Config command:", 1, message.Id);
+			log.Debug(command, 2, message.Id);
+
 			// Separate command into component parts
 			Regex regex = new Regex(@"^(?:<(.+?)>)?\s*(?:(\S+))\s*(.+)?$");
 			Match match = regex.Match(command);
@@ -392,7 +396,7 @@ namespace Puck {
 					log.Warning("Owner of multiple guilds.", 1, message.Id);
 					log.Info("User: " + owner.Userstring(), 1, message.Id);
 					foreach (DiscordGuild guild in guilds_owned) {
-						log.Debug(guild.Guildstring(), 2, message.Id);
+						log.Debug(guild.Name, 2, message.Id);
 					}
 					string helptext =
 						"You are the owner of multiple servers :confused:\n" +
@@ -412,7 +416,7 @@ namespace Puck {
 					log.Warning("Could not find <" + command_guild + ">", 1, message.Id);
 					log.Info("User: " + owner.Userstring(), 1, message.Id);
 					foreach (DiscordGuild guild in guilds_owned) {
-						log.Debug(guild.Guildstring(), 2, message.Id);
+						log.Debug(guild.Name, 2, message.Id);
 					}
 					string helptext =
 						"Could not find your specified server :confused:\n" +
@@ -433,23 +437,23 @@ namespace Puck {
 				}
 				break;
 			}
-			log.Info("Server to configure: " + guild_config.Guildstring(), 1, message.Id);
+			log.Info("Server to configure: " + guild_config.Name, 1, message.Id);
 
 			// Set configuration settings
-			log.Debug("Setting configuration...", 1, message.Id);
+			log.Info("Setting configuration...", 1, message.Id);
 			if (!settings.ContainsKey(guild_config.Id)) {
 				settings.Add(guild_config.Id, new Settings(null));
 			}
 			switch (command_action) {
 			case "view":
 				string settings_text =
-					"Settings for " + guild_config.Guildstring().Bold() + ":\n" +
+					"Settings for " + guild_config.Name.Bold() + ":\n" +
 					"channel: " +
 					(settings[guild_config.Id].bulletin?.Channelstring()
-						?? "Not Set".Bold()) + "\n" +
+						?? "not set".Italics()) + "\n" +
 					"mention: " +
 					(settings[guild_config.Id].default_mention?.Rolestring()
-						?? "Not Set".Bold() + " (no ping)");
+						?? "not set".Italics() + " (no ping)");
 				await puck.SendMessageAsync(channel, settings_text);
 				return;
 			case "channel":
