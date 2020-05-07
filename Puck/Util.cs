@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Puck {
 	static class Util {
-		private static Logger log = Program.GetLogger();
+		static readonly Logger log = Program.GetLogger();
 
 		// Formats the DiscordUser as "Name#0000".
 		public static string Userstring(this DiscordUser u) {

@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 namespace Puck {
 	class Program {
 		static readonly Logger log = new Logger();
+		static readonly Blocklist blocklist = new Blocklist(path_blocklist);
 
 		// `=null!` late init -- this is supposed to be ugly
 		// only possible when guaranteed to terminate if cannot connect
@@ -20,6 +21,7 @@ namespace Puck {
 
 		const string path_token		= @"token.txt";
 		const string path_settings	= @"settings.txt";
+		const string path_blocklist = @"blocklist.txt";
 		const ulong channel_debug_id = 489274692255875091;  // <Erythro> - #test
 
 		static DiscordEmoji?
@@ -151,22 +153,8 @@ namespace Puck {
 					return; // never respond to self
 				}
 
-				bool isMentioned = false;
-				foreach (DiscordUser mention in e.Message.MentionedUsers) {
-					if (mention.IsCurrent) {
-						isMentioned = true;
-						break;
-					}
-				}
-				foreach (DiscordRole role in e.Message.MentionedRoles) {
-					if (role.Name == puck.CurrentUser.Username) {
-						isMentioned = true;
-						log.Debug("Role mention.", 0, e.Message.Id);
-						break;
-					}
-				}
-
-				if (isMentioned) {
+				bool is_mentioned = IsMessageMentioned(e.Message);
+				if (is_mentioned) {
 					_ = e.Message.Channel.TriggerTypingAsync(); // don't need to await
 					log.Info("Raw message:", 0, e.Message.Id);
 					log.Info(e.Message.Content, 0, e.Message.Id);
@@ -190,12 +178,83 @@ namespace Puck {
 						await puck.SendMessageAsync(channel, data.ToString());
 					await CreateControls(message, data.group.type);
 
-					Bulletin bulletin = new Bulletin(message, data);
+					Bulletin bulletin = new Bulletin(message, data, e.Message.Id);
+					if (blocklist.Contains(e.Message.Author.Id)) {
+						bulletin.do_notify_on_delist = false;
+					}
 					bulletins.Add(message.Id, bulletin);
 					bulletin.Delisted += (o, message_id) => {
 						log.Info("Delisting group.", 0, message.Id);
 						bulletins.Remove(message_id);
 					};
+				}
+			};
+
+			puck.MessageUpdated += async e => {
+				Bulletin? bulletin = null;
+				foreach (Bulletin bulletin_i in bulletins.Values) {
+					if (e.Message.Id == bulletin_i.original_id) {
+						bulletin = bulletin_i;
+						break;
+					}
+				}
+
+				if (bulletin != null) {
+					log.Info("Existing message updated.", 0, e.Message.Id);
+					bool is_mentioned = IsMessageMentioned(e.Message);
+
+					if (!is_mentioned) {
+						log.Info("New message no longer mentions this bot.", 0, e.Message.Id);
+						log.Info("Delisting previously posted bulletin.", 0, e.Message.Id);
+						bulletin.data.expiry = DateTimeOffset.Now;
+						await bulletin.Update();
+						return;
+					} else {
+						log.Info("Raw message:", 0, e.Message.Id);
+						log.Info(e.Message.Content, 0, e.Message.Id);
+						Group group_old = bulletin.data.group;
+
+						BulletinData? data = await ParseMessage(e.Message);
+						if (data == null) {
+							log.Warning("No bulletin can be created.", 1, e.Message.Id);
+							log.Info("Delisting previously posted bulletin.", 1, e.Message.Id);
+							bulletin.data.expiry = DateTimeOffset.Now;
+							await bulletin.Update();
+							return;
+						}
+
+						log.Info("Updating bulletin...", 0, e.Message.Id);
+						if (data.group.type == group_old.type) {
+							bulletin.data.group = group_old;
+						}
+						bulletin.data = data;
+						bulletins[bulletin.message.Id] = bulletin;
+							await bulletin.message.ModifyAsync(bulletin.data.ToString());
+						if (bulletin.data.group.type != group_old.type) {
+							log.Info("Group type changed on update.", 1, e.Message.Id);
+							log.Debug("Resetting reactions...", 1, e.Message.Id);
+							await bulletin.message.DeleteAllReactionsAsync("Bulletin group type changed.");
+							await CreateControls(bulletin.message, data.group.type);
+						}
+					}
+				}
+			};
+
+			puck.MessageDeleted += async e => {
+				Bulletin? bulletin = null;
+				foreach (Bulletin bulletin_i in bulletins.Values) {
+					if (e.Message.Id == bulletin_i.original_id) {
+						bulletin = bulletin_i;
+						break;
+					}
+				}
+				if (bulletin != null) {
+					log.Info("Existing message deleted.", 0, e.Message.Id);
+					log.Info("Deleting previously posted bulletin...", 1, e.Message.Id);
+					bulletin.data.expiry = DateTimeOffset.Now;
+					await bulletin.Update();
+					await bulletin.message.DeleteAsync("Original post deleted.");
+					log.Debug("Bulletin deleted.", 1, e.Message.Id);
 				}
 			};
 
@@ -242,7 +301,7 @@ namespace Puck {
 			// Open text file.
 			StreamReader file;
 			try {
-				file = File.OpenText(path_token);
+				file = new StreamReader(path_token);
 			} catch (Exception) {
 				log.Error("Could not open \"" + path_token + "\".", 1);
 				log.Error("Cannot connect to Discord.", 1);
@@ -264,6 +323,7 @@ namespace Puck {
 				log.Error("Cannot connect to Discord.", 1);
 				return;
 			}
+			file.Close();
 
 			// Instantiate discord client.
 			puck = new DiscordClient(new DiscordConfiguration {
@@ -277,6 +337,21 @@ namespace Puck {
 		// Directly exports from static member variables.
 		static async Task ExportSettings(DiscordClient client, bool do_keep_cache = true) {
 			await Settings.Export(path_settings, client, settings, do_keep_cache);
+		}
+
+		static bool IsMessageMentioned(DiscordMessage message) {
+			foreach (DiscordUser mention in message.MentionedUsers) {
+				if (mention.IsCurrent) {
+					return true;
+				}
+			}
+			foreach (DiscordRole role in message.MentionedRoles) {
+				if (role.Name == puck.CurrentUser.Username) {
+					log.Debug("Role mention.", 0, message.Id);
+					return true;
+				}
+			}
+			return false;
 		}
 
 		static async Task<BulletinData?> ParseMessage(DiscordMessage message) {
@@ -315,6 +390,18 @@ namespace Puck {
 				return null;
 			}
 
+			// Handle normal commands
+			if (IsCommand(command_option)) {
+				DiscordChannel? channel = await Util.GetPrivateChannel(message);
+				if (channel == null) {
+					log.Error("Cannot notify user:", 0, message.Id);
+					log.Info("User: " + message.Author.Userstring(), 1, message.Id);
+					return null;
+				}
+				await HandleCommand(command_option, message.Author, channel);
+				return null;
+			}
+
 			// Create bulletin from message
 			DiscordGuild? guild = message.Channel.Guild;
 			if (guild == null) {
@@ -333,6 +420,31 @@ namespace Puck {
 				message,
 				settings
 			);
+		}
+
+		static bool IsHelp(string command) {
+			return command switch {
+				"help"	=> true,
+				"h"		=> true,
+				"?"		=> true,
+				_ => false,
+			};
+		}
+		static bool IsConfig(string command) {
+			return command switch {
+				"config"		=> true,
+				"configuration"	=> true,
+				"conf"			=> true,
+				"cfg"			=> true,
+				_ => false,
+			};
+		}
+		static bool IsCommand(string command) {
+			return command switch {
+				"mute"		=> true,
+				"unmute"	=> true,
+				_ => false,
+			};
 		}
 
 		static async Task SendHelpText(DiscordChannel channel) {
@@ -492,6 +604,31 @@ namespace Puck {
 
 			await ExportSettings(puck);
 			await puck.SendMessageAsync(channel, "Settings updated. :white_check_mark:");
+		}
+
+		static async Task HandleCommand(string command, DiscordUser user, DiscordChannel channel) {
+			switch (command) {
+			case "mute":
+				string text_list_add =
+					"Adding to blocklist: " + user.Userstring();
+				log.Info(text_list_add, 0, user.Id);
+				blocklist.Add(user.Id);
+				blocklist.Export(path_blocklist);
+				break;
+			case "unmute":
+				string text_list_rem =
+					"Taking off blocklist: " + user.Userstring();
+				log.Info(text_list_rem, 0, user.Id);
+				blocklist.Remove(user.Id);
+				blocklist.Export(path_blocklist);
+				break;
+			}
+			log.Info("Notifying user...", 1, channel.Id);
+			string text_update =
+				"Your preferences have been updated. :white_check_mark:\n" +
+				"They will apply to all future groups you post.";
+			await puck.SendMessageAsync(channel, text_update);
+			log.Debug("User notified.", 1, channel.Id);
 		}
 
 		static List<DiscordGuild> GetOwnedGuilds(DiscordUser owner) {
@@ -708,26 +845,6 @@ namespace Puck {
 			}
 
 			await bulletins[message_id].Update();
-		}
-
-		static bool IsHelp(string command) {
-			return command switch
-			{
-				"help"	=> true,
-				"h"		=> true,
-				"?"		=> true,
-				_ => false,
-			};
-		}
-		static bool IsConfig(string command) {
-			return command switch
-			{
-				"config"		=> true,
-				"configuration"	=> true,
-				"conf"			=> true,
-				"cfg"			=> true,
-				_ => false,
-			};
 		}
 	}
 }
