@@ -8,6 +8,11 @@ missed the event don't see outdated pings.
 
 There are some convenience features as well (e.g. DM notifications).
 
+You can also find this bot at:
+- **[Discord Bot List][2]**
+- **[Discord Bots][3]**
+- **[Bots on Discord][4]**
+
 ## Setup
 
 To add the bot to your server, use **[this link][1]**. The required permissions are:
@@ -100,3 +105,6 @@ executable directory, containing a single line with your bot's token.
 `token.txt` file is globally ignored through the `.gitignore` file by default.
 
 [1]: https://discordapp.com/oauth2/authorize?client_id=703068724818608138&scope=bot&permissions=404544
+[2]: https://top.gg/bot/703068724818608138
+[3]: https://discord.bots.gg/bots/703068724818608138
+[4]: https://bots.ondiscord.xyz/bots/703068724818608138
