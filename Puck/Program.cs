@@ -53,10 +53,6 @@ namespace Puck {
 			puck.Ready += async e => {
 				log.Info("Connected to discord.");
 
-				// Initialize emojis.
-				log.Debug("Setting up emojis...", 1);
-				Emoji.Init(puck);
-
 				// Set "custom status".
 				log.Info("Setting bot custom status...", 1);
 				DiscordActivity helptext =
@@ -67,6 +63,11 @@ namespace Puck {
 
 			puck.GuildDownloadCompleted += async e => {
 				log.Info("Connected to specific servers.");
+
+				// Initialize emojis.
+				log.Debug("Setting up emojis...", 1);
+				Emoji.Init(puck);
+
 				log.Debug("Populating server-specific settings...");
 
 				// Set up default config
