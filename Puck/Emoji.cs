@@ -54,7 +54,9 @@ namespace Puck {
 			foreach (Type type in type_to_custom.Keys) {
 				DiscordEmoji emoji =
 					DiscordEmoji.FromName(client, type_to_custom[type]);
-				type_to_emoji[type] = emoji;
+				if (emoji != null) {
+					type_to_emoji[type] = emoji;
+				}
 			}
 		}
 
