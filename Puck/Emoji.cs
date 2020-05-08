@@ -49,6 +49,17 @@ namespace Puck {
 			};
 		}
 
+		// Convert a DiscordEmoji back into an Emoji.Type.
+		// Throws ArgumentException on fail.
+		public static Type? GetType(DiscordEmoji emoji) {
+			foreach (Type type in type_to_emoji.Keys) {
+				if (type_to_emoji[type] == emoji) {
+					return type;
+				}
+			}
+			return null;
+		}
+
 		// Custom emoji initialization (requires a connected client).
 		public static void Init(DiscordClient client) {
 			foreach (Type type in type_to_custom.Keys) {
