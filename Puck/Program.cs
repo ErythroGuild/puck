@@ -603,6 +603,9 @@ namespace Puck {
 			case Group.Type.Dungeon:
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
+			case Group.Type.Arenas:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Vision:
 			case Group.Type.Other:
 				await message.CreateReactionAsync(Emoji.From(Emoji.Type.Tank));
@@ -696,6 +699,8 @@ namespace Puck {
 				break;
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Other:
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
@@ -710,20 +715,42 @@ namespace Puck {
 				}
 				UpdateData();
 				break;
-			case Group.Type.Scenario:
-			case Group.Type.Island:
+			case Group.Type.Arenas:
 				if (is_owner) {
 					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 3)
+							++data.group.tank;
+						else
+							data.group.tank = 0;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 3)
+							++data.group.heal;
+						else
+							data.group.heal = 0;
+						break;
 					case Emoji.Type.Dps:
-						++data.group.dps;
-						data.group.dps %= 4;
+						if (data.group.members() < 3)
+							++data.group.dps;
+						else
+							data.group.dps = 0;
 						break;
 					}
 					DeleteReaction();
 				} else {
 					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 3)
+							++data.group.tank;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 3)
+							++data.group.heal;
+						break;
 					case Emoji.Type.Dps:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+						if (data.group.members() < 3)
+							++data.group.dps;
 						break;
 					}
 				}
@@ -770,6 +797,25 @@ namespace Puck {
 				}
 				UpdateData();
 				break;
+			case Group.Type.Scenario:
+			case Group.Type.Island:
+				if (is_owner) {
+					switch (emoji_type) {
+					case Emoji.Type.Dps:
+						++data.group.dps;
+						data.group.dps %= 4;
+						break;
+					}
+					DeleteReaction();
+				} else {
+					switch (emoji_type) {
+					case Emoji.Type.Dps:
+						data.group.dps = Math.Max(++data.group.dps, 3);
+						break;
+					}
+				}
+				UpdateData();
+				break;
 			}
 
 			await bulletins[message_id].Update();
@@ -803,6 +849,8 @@ namespace Puck {
 			// Group.Type-specific controls
 			switch (bulletins[message_id].data.group.type) {
 			case Group.Type.Dungeon:
+			case Group.Type.Arenas:
+			case Group.Type.Vision:
 				if (is_owner)
 					break;
 				switch (emoji_type) {
@@ -820,7 +868,8 @@ namespace Puck {
 				break;
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
-			case Group.Type.Vision:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Other:
 				// Not `break`ing if the reaction was by the owner,
 				// since owner reactions aren't auto-removed for these.

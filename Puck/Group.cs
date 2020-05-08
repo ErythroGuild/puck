@@ -1,4 +1,4 @@
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,8 @@ namespace Puck {
 		public enum Type {
 			Dungeon,
 			Raid, Warfront,
+			Arenas,
+			RBG, Battleground,
 			Vision,
 			Scenario, Island,
 			Other = -1,
@@ -45,6 +47,38 @@ namespace Puck {
 					"warfront",
 					"warfronts",
 					"wf",
+				} },
+				{ Type.Arenas, new List<string> {
+					"arenas",
+					"arena",
+					"2v2",
+					"2v2s",
+					"2vs2",
+					"2vs2s",
+					"2s",
+					"3v3",
+					"3v3s",
+					"3vs3",
+					"3vs3s",
+					"3s",
+				} },
+				{ Type.RBG, new List<string> {
+					"rbg",
+					"rbgs",
+					"ratedbg",
+					"ratedbgs",
+					"ratedbattleground",
+					"ratedbattlegrounds",
+					"10v10",
+					"10v10s",
+					"10s",
+				} },
+				{ Type.Battleground, new List<string> {
+					"battleground",
+					"battlegrounds",
+					"bg",
+					"bgs",
+					"brawl",
 				} },
 				{ Type.Vision, new List<string> {
 					"vision",
@@ -129,6 +163,8 @@ namespace Puck {
 				break;
 			case Type.Raid:
 			case Type.Warfront:
+			case Type.RBG:
+			case Type.Battleground:
 				str += emoji_tank + ": ";
 				str += tank.ToString();
 
@@ -140,12 +176,22 @@ namespace Puck {
 				str += emoji_dps + ": ";
 				str += dps.ToString();
 				break;
-			case Type.Scenario:
-			case Type.Island:
-				for (int i = 1; i <= 3; i++) {
-					if (i > 1)
+			case Type.Arenas:
+				for (int i = 0; i < tank && counted < 3; i++, counted++) {
+					if (counted > 0)
 						str += separator;
-					str += (total < i) ? box_empty : box_checked;
+					str += emoji_tank;
+				}
+
+				for (int i = 0; i < heal && counted < 3; i++, counted++) {
+					if (counted > 0)
+						str += separator;
+					str += emoji_heal;
+				}
+
+				for (int i = 0; i < dps && counted < 3; i++, counted++) {
+					if (counted > 0)
+						str += separator;
 					str += emoji_dps;
 				}
 				break;
@@ -165,6 +211,15 @@ namespace Puck {
 				for (int i = 0; i < dps && counted < 5; i++, counted++) {
 					if (counted > 0)
 						str += separator;
+					str += emoji_dps;
+				}
+				break;
+			case Type.Scenario:
+			case Type.Island:
+				for (int i = 1; i <= 3; i++) {
+					if (i > 1)
+						str += separator;
+					str += (total < i) ? box_empty : box_checked;
 					str += emoji_dps;
 				}
 				break;
