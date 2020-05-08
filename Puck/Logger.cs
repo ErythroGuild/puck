@@ -10,20 +10,16 @@ namespace Puck {
 			Error	= 3,
 		};
 
-		// Settings for the Logger.
-		public bool show_timestamp = true;
-		public Type type_minimum = Type.Debug;
-
-		// Variables used for internal logic (not configurable).
-		Message? message_prev = null;
-		const string indent_str = "  ";
-		readonly Dictionary<Type, ConsoleColor> type_color =
+		static readonly Dictionary<Type, ConsoleColor> type_color =
 			new Dictionary<Type, ConsoleColor> {
-				{ Type.Debug,	ConsoleColor.DarkGray },
-				{ Type.Info,	ConsoleColor.Gray },
-				{ Type.Warning,	ConsoleColor.Yellow },
-				{ Type.Error,	ConsoleColor.Red },
+				{ Type.Debug,   ConsoleColor.DarkGray },
+				{ Type.Info,    ConsoleColor.Gray },
+				{ Type.Warning, ConsoleColor.Yellow },
+				{ Type.Error,   ConsoleColor.Red },
 		};
+		const string indent_str = "  ";
+
+
 
 		// A fancy struct wrapping settings for each logged line.
 		class Message {
@@ -32,6 +28,13 @@ namespace Puck {
 			public int indent = 0;
 			public string data = "";
 		}
+
+		// Settings for the Logger.
+		public bool show_timestamp = true;
+		public Type type_minimum = Type.Debug;
+
+		// Members used for internal logic.
+		Message? message_prev = null;	// used to set indent level
 
 		// The base function for logging.
 		// All convenience functions are based on this.

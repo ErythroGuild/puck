@@ -1,4 +1,8 @@
 ﻿namespace Puck {
+	// These functions are all "dumb" and do not attempt to perform
+	// any sort of validation on their input/output.
+	// That functionality would be expensive and subject to change
+	// since Discord's formatting behavior is undocumented.
 	static class Format {
 		// Basic text styles
 		public static string Bold(this string s) {
