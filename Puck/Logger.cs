@@ -10,9 +10,11 @@ namespace Puck {
 			Error	= 3,
 		};
 
+		// Settings for the Logger.
 		public bool show_timestamp = true;
 		public Type type_minimum = Type.Debug;
 
+		// Variables used for internal logic (not configurable).
 		Message? message_prev = null;
 		const string indent_str = "  ";
 		readonly Dictionary<Type, ConsoleColor> type_color =
@@ -23,6 +25,7 @@ namespace Puck {
 				{ Type.Error,	ConsoleColor.Red },
 		};
 
+		// A fancy struct wrapping settings for each logged line.
 		class Message {
 			public ulong? parent = null;
 			public Type type = Type.Info;
@@ -30,6 +33,8 @@ namespace Puck {
 			public string data = "";
 		}
 
+		// The base function for logging.
+		// All convenience functions are based on this.
 		public void Log(
 			string s,
 			Type type = Type.Info,
@@ -91,7 +96,7 @@ namespace Puck {
 			message_prev = message;
 		}
 
-		// Syntactic sugar: convenience functions
+		// Syntactic sugar: convenience functions.
 		public void Debug(string s, int indent = 0, ulong? parent = null)
 			{ Log(s, Type.Debug, indent, parent); }
 		public void Info(string s, int indent = 0, ulong? parent = null)
@@ -101,7 +106,7 @@ namespace Puck {
 		public void Error(string s, int indent = 0, ulong? parent = null)
 			{ Log(s, Type.Error, indent, parent); }
 
-		// Alias for Console.WriteLine()
+		// Alias for Console.WriteLine().
 		public void NewLine() { Console.WriteLine(); }
 	}
 }

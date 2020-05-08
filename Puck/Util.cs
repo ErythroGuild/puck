@@ -22,9 +22,12 @@ namespace Puck {
 			return "<" + g.Name + ">";
 		}
 
-		// Formats the DiscordRole as "@Name".
+		// Formats the Role as "@Name".
 		public static string Rolestring(this DiscordRole r) {
 			return "@" + r.Name;
+		}
+		public static string Rolestring(this MentionRole r) {
+			return "@" + r.Name();
 		}
 
 		// Casts DiscordUser to DiscordMember w/ a given guild.
@@ -46,7 +49,9 @@ namespace Puck {
 
 		// Returns a private channel to the sender of a DiscordMessage.
 		// Will fail (return null) if the bot does not share a guild with the user.
-		public static async Task<DiscordChannel?> GetPrivateChannel(DiscordMessage message) {
+		public static async Task<DiscordChannel?>
+			GetPrivateChannel(DiscordMessage message)
+		{
 			DiscordChannel channel = message.Channel;
 			if (!channel.IsPrivate) {
 				// if message was not from a DM channel, then we share a server:
@@ -62,8 +67,9 @@ namespace Puck {
 			return channel;
 		}
 
+		// Calculates permissions for the current channel (for inputs).
 		public static bool CanMention(
-			DiscordRole? role,
+			MentionRole? role,
 			DiscordMember? member,
 			DiscordChannel? channel
 		) {
@@ -72,9 +78,14 @@ namespace Puck {
 			if (member == null || channel == null)
 				return false;
 			Permissions permissions = member.PermissionsIn(channel);
-			bool can_mention = permissions.HasPermission(Permissions.MentionEveryone);
-			if (!can_mention && role.IsMentionable) {
-				can_mention = true;
+			bool can_mention = permissions.
+				HasPermission(Permissions.MentionEveryone);
+			if ( !can_mention &&
+				role.RoleType() == MentionRole.Type.Discord
+			) {
+				// guaranteed non-null because type is Type.Discord
+				DiscordRole discord_role = role.GetDiscordRole()!;
+				can_mention = (can_mention || discord_role.IsMentionable);
 			}
 			return can_mention;
 		}
