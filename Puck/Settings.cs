@@ -9,72 +9,22 @@ using System.Threading.Tasks;
 
 namespace Puck {
 	class Settings {
-		public DiscordChannel? bulletin;
-		public MentionRole? default_mention;
-		public TimeSpan duration;
-		public TimeSpan increment;
-
 		public const string mention_none = "none";
 
-		public Settings(DiscordChannel? bulletin) :
-			this(bulletin, null) { }
-		public Settings(DiscordChannel? bulletin, MentionRole? mention) {
-			this.bulletin = bulletin;
-			default_mention = mention;
-			duration = duration_default;
-			increment = increment_default;
-		}
-
+		// Variables used internally.
 		static readonly Logger log = Program.GetLogger();
-
 		static readonly TimeSpan duration_default = TimeSpan.FromMinutes(10);
 		static readonly TimeSpan increment_default = TimeSpan.FromMinutes(5);
 
+		// Constants used for import/export.
 		const string key_separator = ": ";
-		const string key_bulletin	= "bulletin channel";
-		const string key_mention	= "mention role";
-		const string key_duration	= "duration (min)";
-		const string key_increment	= "increment (min)";
+		const string key_bulletin = "bulletin channel";
+		const string key_mention = "mention role";
+		const string key_duration = "duration (min)";
+		const string key_increment = "increment (min)";
 		const int count_keys = 4;
 
-		public static async Task Export(
-			string path,
-			DiscordClient client,
-			Dictionary<ulong, Settings> settings,
-			bool do_keep_cache = true
-		) {
-			// Copy any uncached settings back into file.
-			if (do_keep_cache) {
-				Dictionary<ulong, Settings> settings_old = await Import(path, client);
-				foreach (ulong id_old in settings_old.Keys) {
-					if (!settings.ContainsKey(id_old))
-						settings.Add(id_old, settings_old[id_old]);
-				}
-			}
-
-			log.Info("Exporting settings...");
-			StreamWriter file = new StreamWriter(path);
-
-			foreach (KeyValuePair<ulong, Settings> pair in settings) {
-				log.Debug("Server ID: " + pair.Key.ToString(), 1);
-
-				file.WriteLine(pair.Key.ToString());
-
-				void Write(string key, string data) {
-					file.WriteLine(key + key_separator + data);
-				}
-				Settings entry = pair.Value;
-
-				Write(key_bulletin,		entry.bulletin?.Id.ToString() ?? "null");
-				Write(key_mention,		entry.default_mention?.ToString() ?? "null");
-				Write(key_duration,		entry.duration.TotalMinutes.ToString());
-				Write(key_increment,	entry.increment.TotalMinutes.ToString());
-			}
-
-			file.Close();
-			log.Info("Settings exported.");
-		}
-
+		// Serialization / deserialization of a list of Settings.
 		public static async Task<Dictionary<ulong, Settings>> Import(
 			string path,
 			DiscordClient client
@@ -149,6 +99,61 @@ namespace Puck {
 			log.Info("Settings import complete.");
 
 			return dict;
+		}
+
+		public static async Task Export(
+			string path,
+			DiscordClient client,
+			Dictionary<ulong, Settings> settings,
+			bool do_keep_cache = true
+		) {
+			// Copy any uncached settings back into file.
+			if (do_keep_cache) {
+				Dictionary<ulong, Settings> settings_old = await Import(path, client);
+				foreach (ulong id_old in settings_old.Keys) {
+					if (!settings.ContainsKey(id_old))
+						settings.Add(id_old, settings_old[id_old]);
+				}
+			}
+
+			log.Info("Exporting settings...");
+			StreamWriter file = new StreamWriter(path);
+
+			foreach (KeyValuePair<ulong, Settings> pair in settings) {
+				log.Debug("Server ID: " + pair.Key.ToString(), 1);
+
+				file.WriteLine(pair.Key.ToString());
+
+				void Write(string key, string data) {
+					file.WriteLine(key + key_separator + data);
+				}
+				Settings entry = pair.Value;
+
+				Write(key_bulletin,  entry.bulletin?.Id.ToString() ?? "null");
+				Write(key_mention,   entry.default_mention?.ToString() ?? "null");
+				Write(key_duration,  entry.duration.TotalMinutes.ToString());
+				Write(key_increment, entry.increment.TotalMinutes.ToString());
+			}
+
+			file.Close();
+			log.Info("Settings exported.");
+		}
+
+
+
+		public DiscordChannel? bulletin;
+		public MentionRole? default_mention;
+		public TimeSpan duration;
+		public TimeSpan increment;
+
+		// Basic constructors with reasonable defaults.
+		public Settings(DiscordChannel? bulletin) :
+			this(bulletin, null) { }
+		public Settings(DiscordChannel? bulletin, MentionRole? mention) {
+			this.bulletin = bulletin;
+			default_mention = mention;
+			duration = duration_default;
+			increment = increment_default;
 		}
 	}
 }
