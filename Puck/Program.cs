@@ -24,28 +24,6 @@ namespace Puck {
 		const string path_blocklist = @"blocklist.txt";
 		const ulong channel_debug_id = 489274692255875091;  // <Erythro> - #test
 
-		static DiscordEmoji?
-			emoji_tank,
-			emoji_heal,
-			emoji_dps,
-			emoji_refresh,
-			emoji_delist;
-		const string
-			emoji_tank_str		= ":shield:",
-			emoji_heal_str		= ":flag_ch:",
-			emoji_dps_str		= ":archery:",
-			emoji_refresh_str	= ":arrows_counterclockwise:",
-			emoji_delist_str	= ":white_check_mark:";
-
-		public static Dictionary<string, DiscordEmoji>? str_to_emoji;
-		public static DiscordEmoji? GetEmoji(Group.Role role) {
-			return role switch {
-				Group.Role.Tank => emoji_tank,
-				Group.Role.Heal => emoji_heal,
-				Group.Role.Dps  => emoji_dps,
-				_ => null,
-			};
-		}
 		public static ref readonly Logger GetLogger() { return ref log; }
 		public static Settings GetSettings(ulong guild_id) { return settings[guild_id]; }
 
@@ -74,22 +52,10 @@ namespace Puck {
 
 			puck.Ready += async e => {
 				log.Info("Connected to discord.");
-				log.Debug("Setting up emojis...", 1);
 
 				// Initialize emojis.
-				emoji_tank = DiscordEmoji.FromName(puck, emoji_tank_str);
-				emoji_heal = DiscordEmoji.FromName(puck, emoji_heal_str);
-				emoji_dps  = DiscordEmoji.FromName(puck, emoji_dps_str);
-				emoji_refresh = DiscordEmoji.FromName(puck, emoji_refresh_str);
-				emoji_delist  = DiscordEmoji.FromName(puck, emoji_delist_str);
-
-				str_to_emoji = new Dictionary<string, DiscordEmoji> {
-					{ emoji_tank_str,       emoji_tank },
-					{ emoji_heal_str,       emoji_heal },
-					{ emoji_dps_str,        emoji_dps },
-					{ emoji_refresh_str,    emoji_refresh },
-					{ emoji_delist_str,     emoji_delist },
-				};
+				log.Debug("Setting up emojis...", 1);
+				Emoji.Init(puck);
 
 				// Set "custom status".
 				log.Info("Setting bot custom status...", 1);
@@ -637,19 +603,22 @@ namespace Puck {
 			case Group.Type.Dungeon:
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
+			case Group.Type.Arenas:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Vision:
 			case Group.Type.Other:
-				await message.CreateReactionAsync(emoji_tank);
-				await message.CreateReactionAsync(emoji_heal);
-				await message.CreateReactionAsync(emoji_dps);
+				await message.CreateReactionAsync(Emoji.From(Emoji.Type.Tank));
+				await message.CreateReactionAsync(Emoji.From(Emoji.Type.Heal));
+				await message.CreateReactionAsync(Emoji.From(Emoji.Type.Dps));
 				break;
 			case Group.Type.Scenario:
 			case Group.Type.Island:
-				await message.CreateReactionAsync(emoji_dps);
+				await message.CreateReactionAsync(Emoji.From(Emoji.Type.Dps));
 				break;
 			}
-			await message.CreateReactionAsync(emoji_refresh);
-			await message.CreateReactionAsync(emoji_delist);
+			await message.CreateReactionAsync(Emoji.From(Emoji.Type.Refresh));
+			await message.CreateReactionAsync(Emoji.From(Emoji.Type.Delist));
 
 			log.Info("Controls created.", 1, message.Id);
 		}
@@ -657,7 +626,8 @@ namespace Puck {
 		static async Task UpdateFromControls(MessageReactionAddEventArgs e) {
 			ulong message_id = e.Message.Id;
 			bool is_owner = (e.User == bulletins[message_id].data.owner);
-			string emoji_str = e.Emoji.GetDiscordName();
+			DiscordEmoji emoji = e.Emoji;
+			Emoji.Type? emoji_type = Emoji.GetType(emoji);
 			BulletinData data= bulletins[message_id].data;
 
 			void UpdateData() {
@@ -665,18 +635,24 @@ namespace Puck {
 			}
 			async void DeleteReaction() {
 				await bulletins[message_id].message.
-					DeleteReactionAsync(str_to_emoji[emoji_str], e.User);
+					DeleteReactionAsync(emoji, e.User);
 				// TODO: add removal reason (for audit logs)
+			}
+
+			if (emoji_type == null) {
+				log.Info("Reaction not recognized.", 1, message_id);
+				log.Debug(emoji.ToString(), 2, message_id);
+				return;
 			}
 
 			// Global controls (refresh/delist)
 			if (is_owner) {
-				switch (emoji_str) {
-				case emoji_refresh_str:
+				switch (emoji_type) {
+				case Emoji.Type.Refresh:
 					data.expiry += settings[e.Guild.Id].increment;
 					DeleteReaction();
 					break;
-				case emoji_delist_str:
+				case Emoji.Type.Delist:
 					data.expiry = DateTimeOffset.Now;
 					DeleteReaction();
 					break;
@@ -691,30 +667,30 @@ namespace Puck {
 			case Group.Type.Dungeon:
 				if (is_owner) {
 					// modulo 1/1/3, but +1 because counting "0" as a state
-					switch (emoji_str) {
-					case emoji_tank_str:
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
 						++data.group.tank;
 						data.group.tank %= 2;
 						break;
-					case emoji_heal_str:
+					case Emoji.Type.Heal:
 						++data.group.heal;
 						data.group.heal %= 2;
 						break;
-					case emoji_dps_str:
+					case Emoji.Type.Dps:
 						++data.group.dps;
 						data.group.dps %= 4;
 						break;
 					}
 					DeleteReaction();
 				} else {
-					switch (emoji_str) {
-					case emoji_tank_str:
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
 						data.group.tank = Math.Max(++data.group.tank, 1);
 						break;
-					case emoji_heal_str:
+					case Emoji.Type.Heal:
 						data.group.heal = Math.Max(++data.group.heal, 1);
 						break;
-					case emoji_dps_str:
+					case Emoji.Type.Dps:
 						data.group.dps = Math.Max(++data.group.dps, 3);
 						break;
 					}
@@ -723,53 +699,120 @@ namespace Puck {
 				break;
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Other:
-				switch (emoji_str) {
-				case emoji_tank_str:
+				switch (emoji_type) {
+				case Emoji.Type.Tank:
 					++data.group.tank;
 					break;
-				case emoji_heal_str:
+				case Emoji.Type.Heal:
 					++data.group.heal;
 					break;
-				case emoji_dps_str:
+				case Emoji.Type.Dps:
 					++data.group.dps;
 					break;
 				}
 				UpdateData();
 				break;
-			case Group.Type.Scenario:
-			case Group.Type.Island:
+			case Group.Type.Arenas:
 				if (is_owner) {
-					switch (emoji_str) {
-					case emoji_dps_str:
-						++data.group.dps;
-						data.group.dps %= 4;
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 3)
+							++data.group.tank;
+						else
+							data.group.tank = 0;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 3)
+							++data.group.heal;
+						else
+							data.group.heal = 0;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 3)
+							++data.group.dps;
+						else
+							data.group.dps = 0;
 						break;
 					}
 					DeleteReaction();
 				} else {
-					switch (emoji_str) {
-					case emoji_dps_str:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 3)
+							++data.group.tank;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 3)
+							++data.group.heal;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 3)
+							++data.group.dps;
 						break;
 					}
 				}
 				UpdateData();
 				break;
 			case Group.Type.Vision:
-				switch (emoji_str) {
-				case emoji_tank_str:
-					if (data.group.members() < 5)
-						++data.group.tank;
-					break;
-				case emoji_heal_str:
-					if (data.group.members() < 5)
-						++data.group.heal;
-					break;
-				case emoji_dps_str:
-					if (data.group.members() < 5)
+				if (is_owner) {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 5)
+							++data.group.tank;
+						else
+							data.group.tank = 0;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 5)
+							++data.group.heal;
+						else
+							data.group.heal = 0;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 5)
+							++data.group.dps;
+						else
+							data.group.dps = 0;
+						break;
+					}
+					DeleteReaction();
+				} else {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 5)
+							++data.group.tank;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 5)
+							++data.group.heal;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 5)
+							++data.group.dps;
+						break;
+					}
+				}
+				UpdateData();
+				break;
+			case Group.Type.Scenario:
+			case Group.Type.Island:
+				if (is_owner) {
+					switch (emoji_type) {
+					case Emoji.Type.Dps:
 						++data.group.dps;
-					break;
+						data.group.dps %= 4;
+						break;
+					}
+					DeleteReaction();
+				} else {
+					switch (emoji_type) {
+					case Emoji.Type.Dps:
+						data.group.dps = Math.Max(++data.group.dps, 3);
+						break;
+					}
 				}
 				UpdateData();
 				break;
@@ -793,22 +836,31 @@ namespace Puck {
 		static async Task UpdateFromControls(MessageReactionRemoveEventArgs e) {
 			ulong message_id = e.Message.Id;
 			bool is_owner = (e.User == bulletins[message_id].data.owner);
-			string emoji_str = e.Emoji.GetDiscordName();
+			DiscordEmoji emoji = e.Emoji;
+			Emoji.Type? emoji_type = Emoji.GetType(emoji);
 			BulletinData data = bulletins[message_id].data;
+
+			if (emoji_type == null) {
+				log.Info("Reaction not recognized.", 1, message_id);
+				log.Debug(emoji.ToString(), 2, message_id);
+				return;
+			}
 
 			// Group.Type-specific controls
 			switch (bulletins[message_id].data.group.type) {
 			case Group.Type.Dungeon:
+			case Group.Type.Arenas:
+			case Group.Type.Vision:
 				if (is_owner)
 					break;
-				switch (emoji_str) {
-				case emoji_tank_str:
+				switch (emoji_type) {
+				case Emoji.Type.Tank:
 					data.group.tank = Math.Min(--data.group.tank, 0);
 					break;
-				case emoji_heal_str:
+				case Emoji.Type.Heal:
 					data.group.heal = Math.Min(--data.group.heal, 0);
 					break;
-				case emoji_dps_str:
+				case Emoji.Type.Dps:
 					data.group.dps = Math.Min(--data.group.dps, 0);
 					break;
 				}
@@ -816,18 +868,19 @@ namespace Puck {
 				break;
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
-			case Group.Type.Vision:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Other:
 				// Not `break`ing if the reaction was by the owner,
 				// since owner reactions aren't auto-removed for these.
-				switch (emoji_str) {
-				case emoji_tank_str:
+				switch (emoji_type) {
+				case Emoji.Type.Tank:
 					data.group.tank = Math.Min(--data.group.tank, 0);
 					break;
-				case emoji_heal_str:
+				case Emoji.Type.Heal:
 					data.group.heal = Math.Min(--data.group.heal, 0);
 					break;
-				case emoji_dps_str:
+				case Emoji.Type.Dps:
 					data.group.dps = Math.Min(--data.group.dps, 0);
 					break;
 				}
@@ -837,8 +890,8 @@ namespace Puck {
 			case Group.Type.Island:
 				if (is_owner)
 					break;
-				switch (emoji_str) {
-				case emoji_dps_str:
+				switch (emoji_type) {
+				case Emoji.Type.Dps:
 					data.group.dps = Math.Min(--data.group.dps, 0);
 					break;
 				}
