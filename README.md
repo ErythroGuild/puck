@@ -60,9 +60,12 @@ The following is a list of recognized group types:
 - Dungeon: `-dungeon`, `-mythics`, `-m0`, `-key`, `-m+`, ...
 - Raid: `-raid`
 - Warfront: `-warfront`, `-wf`
+- Arenas: `-arenas`, `-2v2`, `-2s`, ...
+- RBG: `-rbg`, `-ratedbg`, `-ratedbattleground`
+- Battleground: `-battleground`, `-bg`, `-brawl`
+- Vision: `-vision`, `-hv`
 - Scenario: `-scenario`
 - Island: `-island`
-- Vision: `-vision`, `-hv`
 - Other: `-other`, `-misc`
 
 Mentions can be any role in the server and should be typed without an `@`.
