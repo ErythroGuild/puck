@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Entities;
+using DSharpPlus.Entities;
 
 namespace Puck {
 	class MentionRole {
@@ -28,7 +28,13 @@ namespace Puck {
 			this.type = type;
 			if (type == Type.Discord) {
 				discord_role = role;
+			} else {
+				discord_role = null;
 			}
+		}
+		public void Set(DiscordRole role) {
+			type = Type.Discord;
+			discord_role = role;
 		}
 
 		public Type RoleType() {
@@ -36,17 +42,6 @@ namespace Puck {
 		}
 		public DiscordRole? GetDiscordRole() {
 			return discord_role;
-		}
-
-		public string? Mention() {
-			// default case will only happen if type was casted
-			return type switch {
-				Type.None		=> null,
-				Type.Here		=> "@here",
-				Type.Everyone	=> "@everyone",
-				Type.Discord	=> discord_role!.Mention,
-				_ => null,
-			};
 		}
 
 		public string Name() {
@@ -57,6 +52,17 @@ namespace Puck {
 				Type.Everyone	=> "everyone",
 				Type.Discord	=> discord_role!.Name,
 				_ => "none",
+			};
+		}
+
+		public string? Mention() {
+			// default case will only happen if type was casted
+			return type switch {
+				Type.None		=> null,
+				Type.Here		=> "@here",
+				Type.Everyone	=> "@everyone",
+				Type.Discord	=> discord_role!.Mention,
+				_ => null,
 			};
 		}
 	}
