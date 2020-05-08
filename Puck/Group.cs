@@ -106,9 +106,9 @@ namespace Puck {
 			string box_empty = "\u2610";
 			string box_checked = "\u2611\uFE0E";
 			string separator = "\u2003";
-			string emoji_tank = Program.GetEmoji(Role.Tank)?.ToString() ?? "";
-			string emoji_heal = Program.GetEmoji(Role.Heal)?.ToString() ?? "";
-			string emoji_dps  = Program.GetEmoji(Role.Dps )?.ToString() ?? "";
+			string emoji_tank = Emoji.From(Role.Tank).ToString();
+			string emoji_heal = Emoji.From(Role.Heal).ToString();
+			string emoji_dps  = Emoji.From(Role.Dps ).ToString();
 
 			int total = members();
 			int counted = 0;
