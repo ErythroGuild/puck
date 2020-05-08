@@ -1,11 +1,17 @@
 ﻿using DSharpPlus;
 using DSharpPlus.Entities;
 
+using System;
 using System.Threading.Tasks;
 
 namespace Puck {
 	static class Util {
 		static readonly Logger log = Program.GetLogger();
+
+		// Rounds the input to the nearest "five" (keeps as double).
+		public static double RoundToFive(double x) {
+			return Math.Round(x / 5.0) * 5.0;
+		}
 
 		// Formats the DiscordUser as "Name#0000".
 		public static string Userstring(this DiscordUser u) {
