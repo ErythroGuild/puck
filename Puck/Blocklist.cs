@@ -4,16 +4,22 @@ using System.IO;
 
 namespace Puck {
 	class Blocklist {
+		// using HashSet to automatically de-dupe entries
 		public HashSet<ulong> data;
 
 		static readonly Logger log = Program.GetLogger();
+		
+		// Static import/export functions.
+		public static Blocklist Import(string path)
+			{ return new Blocklist(path); }
+		public static void Export(Blocklist list, string path)
+			{ list.Export(path); }
 
-		// Hide default constructor (force private)
-		private Blocklist() {
-			data = new HashSet<ulong>();
-		}
+		// Hide default constructor.
+		private Blocklist()
+			{ data = new HashSet<ulong>(); }
 
-		// Construct a blocklist from a file
+		// Construct a blocklist from a file.
 		public Blocklist(string path) {
 			log.Info("Reading blocklist...");
 			data = new HashSet<ulong>();
@@ -39,7 +45,7 @@ namespace Puck {
 			log.Info("Blocklist import complete.", 1);
 		}
 
-		// Save blocklist to file
+		// Export the blocklist to a file.
 		public void Export(string path) {
 			log.Info("Saving blocklist to file...", 1);
 			StreamWriter file = new StreamWriter(path);
@@ -52,7 +58,7 @@ namespace Puck {
 			log.Info("Blocklist saved.", 1);
 		}
 
-		// Convenience wrapper functions
+		// Convenience wrapper functions.
 		public void Add(ulong id) {
 			data.Add(id);
 		}
@@ -61,6 +67,12 @@ namespace Puck {
 		}
 		public bool Contains(ulong id) {
 			return data.Contains(id);
+		}
+		public void Union(Blocklist list) {
+			data.UnionWith(list.data);
+		}
+		public void Intersect(Blocklist list) {
+			data.IntersectWith(list.data);
 		}
 	}
 }

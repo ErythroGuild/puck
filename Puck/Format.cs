@@ -19,6 +19,7 @@
 			return "__" + s + "__";
 		}
 
+		// Only works for links.
 		public static string NoPreview(this string s) => s.NoEmbed();
 		public static string NoEmbed(this string s) {
 			return "<" + s + ">";

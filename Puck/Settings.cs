@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Puck {
 	class Settings {
 		public DiscordChannel? bulletin;
-		public DiscordRole? default_mention;
+		public MentionRole? default_mention;
 		public TimeSpan duration;
 		public TimeSpan increment;
 
@@ -18,7 +18,7 @@ namespace Puck {
 
 		public Settings(DiscordChannel? bulletin) :
 			this(bulletin, null) { }
-		public Settings(DiscordChannel? bulletin, DiscordRole? mention) {
+		public Settings(DiscordChannel? bulletin, MentionRole? mention) {
 			this.bulletin = bulletin;
 			default_mention = mention;
 			duration = duration_default;
@@ -66,7 +66,7 @@ namespace Puck {
 				Settings entry = pair.Value;
 
 				Write(key_bulletin,		entry.bulletin?.Id.ToString() ?? "null");
-				Write(key_mention,		entry.default_mention?.Id.ToString() ?? "null");
+				Write(key_mention,		entry.default_mention?.ToString() ?? "null");
 				Write(key_duration,		entry.duration.TotalMinutes.ToString());
 				Write(key_increment,	entry.increment.TotalMinutes.ToString());
 			}
@@ -130,8 +130,7 @@ namespace Puck {
 							settings.default_mention = null;
 							break;
 						}
-						ulong mention_id = Convert.ToUInt64(data);
-						settings.default_mention = guild.GetRole(mention_id);
+						settings.default_mention = MentionRole.FromID(data, guild);
 						break;
 					case key_duration:
 						int duration_min = Convert.ToInt32(data);
