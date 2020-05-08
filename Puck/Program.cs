@@ -587,18 +587,8 @@ namespace Puck {
 				}
 				break;
 			case "mention":
-				foreach (DiscordRole role in guild_config.Roles.Values) {
-					if (role.Name == command_data) {
-						settings[guild_config.Id].default_mention = role;
-						break;
-					}
-				}
-				if (command_data == "everyone") {
-					settings[guild_config.Id].default_mention = guild_config.EveryoneRole;
-				}
-				if (command_data == "none") {
-					settings[guild_config.Id].default_mention = null;
-				}
+				settings[guild_config.Id].default_mention =
+					MentionRole.FromName(command_data, guild_config);
 				break;
 			}
 

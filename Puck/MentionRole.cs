@@ -1,5 +1,7 @@
 ﻿using DSharpPlus.Entities;
 
+using System;
+
 namespace Puck {
 	class MentionRole {
 		public enum Type {
@@ -11,6 +13,49 @@ namespace Puck {
 		Type type;
 		DiscordRole? discord_role;
 		// DiscordRole should only be non-null if type is .Discord.
+
+		// Static methods for serialization & deserialization.
+		public static string ToString(MentionRole role) {
+			// default case will only happen if type was casted
+			return role.type switch {
+				Type.None		=> "none",
+				Type.Here		=> "here",
+				Type.Everyone	=> "everyone",
+				Type.Discord	=> role.discord_role!.Id.ToString(),
+				_ => "",
+			};
+		}
+		public static MentionRole? FromID(string id, DiscordGuild guild) {
+			Type type = id switch {
+				"none"		=> Type.None,
+				"here"		=> Type.Here,
+				"everyone"	=> Type.Everyone,
+				_			=> Type.Discord,
+			};
+			DiscordRole? role = null;
+			if (type == Type.Discord) {
+				role = guild.GetRole(Convert.ToUInt64(id));
+			}
+			return new MentionRole(type, role);
+		}
+		public static MentionRole? FromName(string name, DiscordGuild guild) {
+			Type type = name switch {
+				"none"		=> Type.None,
+				"here"		=> Type.Here,
+				"everyone"	=> Type.Everyone,
+				_			=> Type.Discord,
+			};
+			DiscordRole? role = null;
+			if (type == Type.Discord) {
+				foreach (DiscordRole role_i in guild.Roles.Values) {
+					if (role_i.Name == name) {
+						role = role_i;
+						break;
+					}
+				}
+			}
+			return new MentionRole(type, role);
+		}
 
 		// Can be constructed from either a MentionRole.Type,
 		// or directly with a DiscordRole.
@@ -25,6 +70,11 @@ namespace Puck {
 		public MentionRole(DiscordRole role) {
 			type = Type.Discord;
 			discord_role = role;
+		}
+
+		// Serialization.
+		public override string ToString() {
+			return ToString(this);
 		}
 
 		// Setters basically replicate constructor logic.

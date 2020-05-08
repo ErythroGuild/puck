@@ -7,14 +7,14 @@ namespace Puck {
 	class BulletinData {
 		public DiscordMember owner;
 		public string title;
-		public DiscordRole? mention;
+		public MentionRole? mention;
 		public DateTimeOffset expiry;
 		public Group group;
 
 		private BulletinData(
 			DiscordMember owner,
 			string title,
-			DiscordRole? mention,
+			MentionRole? mention,
 			DateTimeOffset expiry,
 			Group group
 		) {
@@ -31,13 +31,7 @@ namespace Puck {
 
 			// @mention + group title
 			if (mention != null && !is_expired) {
-				// @everyone role isn't actually ping-able,
-				// the actual @everyone ping is hardcoded from plaintext.
-				if (mention.Name == "@everyone")
-					post += "@everyone";
-				else
-					post += mention.Mention;
-				post += " ";
+				post += mention.Mention() + " ";
 			}
 			string title_str = title.Bold();
 			if (is_expired)
@@ -74,21 +68,13 @@ namespace Puck {
 			DiscordGuild guild = message.Channel.Guild;
 
 			// Get DiscordRole to mention
-			DiscordRole? mention = null;
+			MentionRole? mention = null;
 			if (command_mention == string.Empty) {
-				command_mention = settings.default_mention?.Name
+				command_mention = settings.default_mention?.Name()
 					?? Settings.mention_none;
 			}
 			if (command_mention != Settings.mention_none) {
-				if (command_mention == "everyone") {
-					mention = guild.EveryoneRole;
-				}
-				foreach (DiscordRole role in guild.Roles.Values) {
-					if (role.Name == command_mention) {
-						mention = role;
-						break;
-					}
-				}
+				mention = MentionRole.FromName(command_mention, guild);
 			}
 			bool can_mention = Util.CanMention(
 				mention,
