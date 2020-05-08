@@ -101,7 +101,7 @@ namespace Puck {
 			return tank + heal + dps;
 		}
 
-		override public string ToString() {
+		public override string ToString() {
 			string str = "";
 			string box_empty = "\u2610";
 			string box_checked = "\u2611\uFE0E";

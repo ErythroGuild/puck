@@ -180,7 +180,7 @@ namespace Puck {
 
 					Bulletin bulletin = new Bulletin(message, data, e.Message.Id);
 					if (blocklist.Contains(e.Message.Author.Id)) {
-						bulletin.do_notify_on_delist = false;
+						bulletin.do_notify_owner = false;
 					}
 					bulletins.Add(message.Id, bulletin);
 					bulletin.Delisted += (o, message_id) => {
@@ -209,33 +209,32 @@ namespace Puck {
 						bulletin.data.expiry = DateTimeOffset.Now;
 						await bulletin.Update();
 						return;
-					} else {
-						log.Info("Raw message:", 0, e.Message.Id);
-						log.Info(e.Message.Content, 0, e.Message.Id);
-						Group group_old = bulletin.data.group;
+					}
+					log.Info("Raw message:", 0, e.Message.Id);
+					log.Info(e.Message.Content, 0, e.Message.Id);
+					Group group_old = bulletin.data.group;
 
-						BulletinData? data = await ParseMessage(e.Message);
-						if (data == null) {
-							log.Warning("No bulletin can be created.", 1, e.Message.Id);
-							log.Info("Delisting previously posted bulletin.", 1, e.Message.Id);
-							bulletin.data.expiry = DateTimeOffset.Now;
-							await bulletin.Update();
-							return;
-						}
+					BulletinData? data = await ParseMessage(e.Message);
+					if (data == null) {
+						log.Warning("No bulletin can be created.", 1, e.Message.Id);
+						log.Info("Delisting previously posted bulletin.", 1, e.Message.Id);
+						bulletin.data.expiry = DateTimeOffset.Now;
+						await bulletin.Update();
+						return;
+					}
 
-						log.Info("Updating bulletin...", 0, e.Message.Id);
-						if (data.group.type == group_old.type) {
-							bulletin.data.group = group_old;
-						}
-						bulletin.data = data;
-						bulletins[bulletin.message.Id] = bulletin;
-							await bulletin.message.ModifyAsync(bulletin.data.ToString());
-						if (bulletin.data.group.type != group_old.type) {
-							log.Info("Group type changed on update.", 1, e.Message.Id);
-							log.Debug("Resetting reactions...", 1, e.Message.Id);
-							await bulletin.message.DeleteAllReactionsAsync("Bulletin group type changed.");
-							await CreateControls(bulletin.message, data.group.type);
-						}
+					log.Info("Updating bulletin...", 0, e.Message.Id);
+					bulletin.data = data;
+					if (data.group.type == group_old.type) {
+						bulletin.data.group = group_old;
+					}
+					bulletins[bulletin.message.Id] = bulletin;
+						await bulletin.message.ModifyAsync(bulletin.data.ToString());
+					if (bulletin.data.group.type != group_old.type) {
+						log.Info("Group type changed on update.", 1, e.Message.Id);
+						log.Debug("Resetting reactions...", 1, e.Message.Id);
+						await bulletin.message.DeleteAllReactionsAsync("Bulletin group type changed.");
+						await CreateControls(bulletin.message, data.group.type);
 					}
 				}
 			};
@@ -587,18 +586,8 @@ namespace Puck {
 				}
 				break;
 			case "mention":
-				foreach (DiscordRole role in guild_config.Roles.Values) {
-					if (role.Name == command_data) {
-						settings[guild_config.Id].default_mention = role;
-						break;
-					}
-				}
-				if (command_data == "everyone") {
-					settings[guild_config.Id].default_mention = guild_config.EveryoneRole;
-				}
-				if (command_data == "none") {
-					settings[guild_config.Id].default_mention = null;
-				}
+				settings[guild_config.Id].default_mention =
+					MentionRole.FromName(command_data, guild_config);
 				break;
 			}
 
@@ -787,17 +776,30 @@ namespace Puck {
 			}
 
 			await bulletins[message_id].Update();
+			if (!is_owner && bulletins[message_id].do_notify_owner) {
+				log.Debug("Notifying owner...", 1, message_id);
+				DiscordChannel channel = await
+					bulletins[message_id].
+					data.owner.
+					CreateDmChannelAsync();
+				string notification =
+					e.User.ToDiscordMember(e.Guild)!.Nickname +
+					" signed up for your group " +
+					bulletins[message_id].data.title.Bold();
+				await puck.SendMessageAsync(channel, notification);
+			}
 		}
 
 		static async Task UpdateFromControls(MessageReactionRemoveEventArgs e) {
 			ulong message_id = e.Message.Id;
+			bool is_owner = (e.User == bulletins[message_id].data.owner);
 			string emoji_str = e.Emoji.GetDiscordName();
 			BulletinData data = bulletins[message_id].data;
 
 			// Group.Type-specific controls
 			switch (bulletins[message_id].data.group.type) {
 			case Group.Type.Dungeon:
-				if (e.User == data.owner)
+				if (is_owner)
 					break;
 				switch (emoji_str) {
 				case emoji_tank_str:
@@ -833,7 +835,7 @@ namespace Puck {
 				break;
 			case Group.Type.Scenario:
 			case Group.Type.Island:
-				if (e.User == data.owner)
+				if (is_owner)
 					break;
 				switch (emoji_str) {
 				case emoji_dps_str:
@@ -845,6 +847,18 @@ namespace Puck {
 			}
 
 			await bulletins[message_id].Update();
+			if (!is_owner && bulletins[message_id].do_notify_owner) {
+				log.Debug("Notifying owner...", 1, message_id);
+				DiscordChannel channel = await
+					bulletins[message_id].
+					data.owner.
+					CreateDmChannelAsync();
+				string notification =
+					e.User.ToDiscordMember(e.Guild)!.Nickname +
+					" removed themselves from your group " +
+					bulletins[message_id].data.title.Bold();
+				await puck.SendMessageAsync(channel, notification);
+			}
 		}
 	}
 }
