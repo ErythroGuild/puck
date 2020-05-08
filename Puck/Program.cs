@@ -180,7 +180,7 @@ namespace Puck {
 
 					Bulletin bulletin = new Bulletin(message, data, e.Message.Id);
 					if (blocklist.Contains(e.Message.Author.Id)) {
-						bulletin.do_notify_on_delist = false;
+						bulletin.do_notify_owner = false;
 					}
 					bulletins.Add(message.Id, bulletin);
 					bulletin.Delisted += (o, message_id) => {
@@ -209,33 +209,32 @@ namespace Puck {
 						bulletin.data.expiry = DateTimeOffset.Now;
 						await bulletin.Update();
 						return;
-					} else {
-						log.Info("Raw message:", 0, e.Message.Id);
-						log.Info(e.Message.Content, 0, e.Message.Id);
-						Group group_old = bulletin.data.group;
+					}
+					log.Info("Raw message:", 0, e.Message.Id);
+					log.Info(e.Message.Content, 0, e.Message.Id);
+					Group group_old = bulletin.data.group;
 
-						BulletinData? data = await ParseMessage(e.Message);
-						if (data == null) {
-							log.Warning("No bulletin can be created.", 1, e.Message.Id);
-							log.Info("Delisting previously posted bulletin.", 1, e.Message.Id);
-							bulletin.data.expiry = DateTimeOffset.Now;
-							await bulletin.Update();
-							return;
-						}
+					BulletinData? data = await ParseMessage(e.Message);
+					if (data == null) {
+						log.Warning("No bulletin can be created.", 1, e.Message.Id);
+						log.Info("Delisting previously posted bulletin.", 1, e.Message.Id);
+						bulletin.data.expiry = DateTimeOffset.Now;
+						await bulletin.Update();
+						return;
+					}
 
-						log.Info("Updating bulletin...", 0, e.Message.Id);
-						if (data.group.type == group_old.type) {
-							bulletin.data.group = group_old;
-						}
-						bulletin.data = data;
-						bulletins[bulletin.message.Id] = bulletin;
-							await bulletin.message.ModifyAsync(bulletin.data.ToString());
-						if (bulletin.data.group.type != group_old.type) {
-							log.Info("Group type changed on update.", 1, e.Message.Id);
-							log.Debug("Resetting reactions...", 1, e.Message.Id);
-							await bulletin.message.DeleteAllReactionsAsync("Bulletin group type changed.");
-							await CreateControls(bulletin.message, data.group.type);
-						}
+					log.Info("Updating bulletin...", 0, e.Message.Id);
+					bulletin.data = data;
+					if (data.group.type == group_old.type) {
+						bulletin.data.group = group_old;
+					}
+					bulletins[bulletin.message.Id] = bulletin;
+						await bulletin.message.ModifyAsync(bulletin.data.ToString());
+					if (bulletin.data.group.type != group_old.type) {
+						log.Info("Group type changed on update.", 1, e.Message.Id);
+						log.Debug("Resetting reactions...", 1, e.Message.Id);
+						await bulletin.message.DeleteAllReactionsAsync("Bulletin group type changed.");
+						await CreateControls(bulletin.message, data.group.type);
 					}
 				}
 			};

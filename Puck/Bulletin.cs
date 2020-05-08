@@ -9,7 +9,7 @@ namespace Puck {
 		public DiscordMessage message;
 		public BulletinData data;
 		public ulong original_id;
-		public bool do_notify_on_delist;
+		public bool do_notify_owner;
 
 		readonly Timer updater;
 
@@ -22,7 +22,7 @@ namespace Puck {
 			this.message = message;
 			this.data = data;
 			this.original_id = original_id;
-			do_notify_on_delist = true;
+			do_notify_owner = true;
 
 			updater = new Timer(interval_refresh) {
 				AutoReset = true
@@ -40,7 +40,7 @@ namespace Puck {
 				log.Info("Bulletin delisted.", 0, message.Id);
 				updater.Stop();
 
-				if (do_notify_on_delist) {
+				if (do_notify_owner) {
 					string notification = "";
 					notification +=
 						"Your group " +
