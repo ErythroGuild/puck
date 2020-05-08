@@ -62,6 +62,7 @@ namespace Puck {
 			return channel;
 		}
 
+		// Calculates permissions for the current channel (for inputs).
 		public static bool CanMention(
 			DiscordRole? role,
 			DiscordMember? member,
