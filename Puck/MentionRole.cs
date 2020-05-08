@@ -16,13 +16,12 @@ namespace Puck {
 
 		// Static methods for serialization & deserialization.
 		public static string ToString(MentionRole role) {
-			// default case will only happen if type was casted
 			return role.type switch {
 				Type.None		=> "none",
 				Type.Here		=> "here",
 				Type.Everyone	=> "everyone",
 				Type.Discord	=> role.discord_role!.Id.ToString(),
-				_ => "",
+				_ => throw new ArgumentException(),
 			};
 		}
 		public static MentionRole? FromID(string id, DiscordGuild guild) {
@@ -103,25 +102,23 @@ namespace Puck {
 		// Equivalents for DiscordRole properties.
 		// Name() is the role's text equivalent.
 		public string Name() {
-			// default case will only happen if type was casted
 			return type switch {
 				Type.None		=> "none",
 				Type.Here		=> "here",
 				Type.Everyone	=> "everyone",
 				Type.Discord	=> discord_role!.Name,
-				_ => "none",
+				_ => throw new InvalidOperationException(),
 			};
 		}
 
 		// Mention() is the string used to ping the role.
 		public string? Mention() {
-			// default case will only happen if type was casted
 			return type switch {
 				Type.None		=> null,
 				Type.Here		=> "@here",
 				Type.Everyone	=> "@everyone",
 				Type.Discord	=> discord_role!.Mention,
-				_ => null,
+				_ => throw new InvalidOperationException(),
 			};
 		}
 	}
