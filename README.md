@@ -70,7 +70,7 @@ E.g. `!everyone`, not `!@everyone`. If no mention is specified, the default for
 the server is used, if one has been specified. `!none` can be used to suppress
 pings if a server default has been configured.
 
-You can mute/unmute delist notifications from the bot with the following pair
+You can mute/unmute bulletin notifications from the bot with the following pair
 of commands:
 - `@Puck -mute`
 - `@Puck -unmute`
