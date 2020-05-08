@@ -776,17 +776,30 @@ namespace Puck {
 			}
 
 			await bulletins[message_id].Update();
+			if (!is_owner && bulletins[message_id].do_notify_owner) {
+				log.Debug("Notifying owner...", 1, message_id);
+				DiscordChannel channel = await
+					bulletins[message_id].
+					data.owner.
+					CreateDmChannelAsync();
+				string notification =
+					e.User.ToDiscordMember(e.Guild)!.Nickname +
+					" signed up for your group " +
+					bulletins[message_id].data.title.Bold();
+				await puck.SendMessageAsync(channel, notification);
+			}
 		}
 
 		static async Task UpdateFromControls(MessageReactionRemoveEventArgs e) {
 			ulong message_id = e.Message.Id;
+			bool is_owner = (e.User == bulletins[message_id].data.owner);
 			string emoji_str = e.Emoji.GetDiscordName();
 			BulletinData data = bulletins[message_id].data;
 
 			// Group.Type-specific controls
 			switch (bulletins[message_id].data.group.type) {
 			case Group.Type.Dungeon:
-				if (e.User == data.owner)
+				if (is_owner)
 					break;
 				switch (emoji_str) {
 				case emoji_tank_str:
@@ -822,7 +835,7 @@ namespace Puck {
 				break;
 			case Group.Type.Scenario:
 			case Group.Type.Island:
-				if (e.User == data.owner)
+				if (is_owner)
 					break;
 				switch (emoji_str) {
 				case emoji_dps_str:
@@ -834,6 +847,18 @@ namespace Puck {
 			}
 
 			await bulletins[message_id].Update();
+			if (!is_owner && bulletins[message_id].do_notify_owner) {
+				log.Debug("Notifying owner...", 1, message_id);
+				DiscordChannel channel = await
+					bulletins[message_id].
+					data.owner.
+					CreateDmChannelAsync();
+				string notification =
+					e.User.ToDiscordMember(e.Guild)!.Nickname +
+					" removed themselves from your group " +
+					bulletins[message_id].data.title.Bold();
+				await puck.SendMessageAsync(channel, notification);
+			}
 		}
 	}
 }
