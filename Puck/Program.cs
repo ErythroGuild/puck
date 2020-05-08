@@ -730,19 +730,43 @@ namespace Puck {
 				UpdateData();
 				break;
 			case Group.Type.Vision:
-				switch (emoji_type) {
-				case Emoji.Type.Tank:
-					if (data.group.members() < 5)
-						++data.group.tank;
-					break;
-				case Emoji.Type.Heal:
-					if (data.group.members() < 5)
-						++data.group.heal;
-					break;
-				case Emoji.Type.Dps:
-					if (data.group.members() < 5)
-						++data.group.dps;
-					break;
+				if (is_owner) {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 5)
+							++data.group.tank;
+						else
+							data.group.tank = 0;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 5)
+							++data.group.heal;
+						else
+							data.group.heal = 0;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 5)
+							++data.group.dps;
+						else
+							data.group.dps = 0;
+						break;
+					}
+					DeleteReaction();
+				} else {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 5)
+							++data.group.tank;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 5)
+							++data.group.heal;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 5)
+							++data.group.dps;
+						break;
+					}
 				}
 				UpdateData();
 				break;

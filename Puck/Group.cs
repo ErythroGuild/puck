@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Entities;
+using DSharpPlus.Entities;
 
 using System;
 using System.Collections.Generic;
@@ -17,8 +17,8 @@ namespace Puck {
 		public enum Type {
 			Dungeon,
 			Raid, Warfront,
-			Scenario, Island,
 			Vision,
+			Scenario, Island,
 			Other = -1,
 		};
 
@@ -46,6 +46,11 @@ namespace Puck {
 					"warfronts",
 					"wf",
 				} },
+				{ Type.Vision, new List<string> {
+					"vision",
+					"visions",
+					"hv",
+				} },
 				{ Type.Scenario, new List<string> {
 					"scenario",
 					"scenarios",
@@ -53,11 +58,6 @@ namespace Puck {
 				{ Type.Island, new List<string> {
 					"island",
 					"islands",
-				} },
-				{ Type.Vision, new List<string> {
-					"vision",
-					"visions",
-					"hv",
 				} },
 				{ Type.Other, new List<string> {
 					"other",
