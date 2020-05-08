@@ -104,6 +104,41 @@ executable directory, containing a single line with your bot's token.
 **Do NOT share this token,** especially by uploading it to GitHub. The
 `token.txt` file is globally ignored through the `.gitignore` file by default.
 
+## Project Structure
+
+The code for this project consists of a number of different separated
+classes. All components are well-documented with comments in their
+respective `.cs` files, and the functioning of each component should be
+self-explanatory. If anything is *not* evident, consider opening a
+GitHub issue to resolve it.
+
+- **`Program` defines the main program.** This deals with all of the
+interfacing between the Discord API, user input, and console output.
+This is the entry point of the program.
+- `Format` defines methods (and extension methods) that are syntactic
+sugar for Discord-supported text formatting. These are all "dumb"
+functions and do not attempt to perform any validation of IO.
+- `Util` contains helper functions that could be useful in any program
+(not just this project).
+- `Logger` unifies all console output with a single class. Although it
+is *not* a singleton, each program should instantiate a single one and
+pass it to its children.
+- `Blocklist` is a lightweight `HashSet<>` wrapper for a list of user
+IDSs not to notify for listing-related events.
+- `Emoji` is a wrapper around `DiscordEmoji` that allows strongly-typed
+access. It attempts to use custom emojis (from the **Erythro** server),
+but will fall back to default Unicode emojis.
+- `Settings` defines a set of configurations for a particular server.
+- `Bulletin` contains the data associated with a particular bulletin,
+created from a user command.
+- `BulletinData` contains the data associated with a particular bulletin,
+which was inputted by a user and parsed.
+- `Group` holds the number and type of members associated with any
+bulletin. It also contains relevant type functionality.
+- `MentionRole` is a wrapper around `DiscordRole` to also include "none",
+`@here`, and `@everyone` (since Discord does not consider those actual
+`DiscordRole`s to mention).
+
 [1]: https://discordapp.com/oauth2/authorize?client_id=703068724818608138&scope=bot&permissions=404544
 [2]: https://top.gg/bot/703068724818608138
 [3]: https://discord.bots.gg/bots/703068724818608138
