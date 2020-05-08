@@ -4,9 +4,6 @@ using System.IO;
 
 namespace Puck {
 	class Blocklist {
-		// using HashSet to automatically de-dupe entries
-		public HashSet<ulong> data;
-
 		static readonly Logger log = Program.GetLogger();
 		
 		// Static import/export functions.
@@ -14,6 +11,11 @@ namespace Puck {
 			{ return new Blocklist(path); }
 		public static void Export(Blocklist list, string path)
 			{ list.Export(path); }
+
+
+
+		// using HashSet to automatically de-dupe entries
+		public HashSet<ulong> data;
 
 		// Hide default constructor.
 		private Blocklist()

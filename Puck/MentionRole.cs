@@ -9,11 +9,7 @@ namespace Puck {
 			Here, Everyone,
 			Discord,
 		};
-
-		Type type;
-		DiscordRole? discord_role;
-		// DiscordRole should only be non-null if type is .Discord.
-
+		
 		// Static methods for serialization & deserialization.
 		public static string ToString(MentionRole role) {
 			return role.type switch {
@@ -55,6 +51,12 @@ namespace Puck {
 			}
 			return new MentionRole(type, role);
 		}
+
+
+
+		Type type;
+		DiscordRole? discord_role;
+		// DiscordRole should only be non-null if type is .Discord.
 
 		// Can be constructed from either a MentionRole.Type,
 		// or directly with a DiscordRole.

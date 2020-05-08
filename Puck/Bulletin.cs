@@ -6,6 +6,15 @@ using System.Timers;
 
 namespace Puck {
 	class Bulletin {
+		// Constants.
+		static readonly Logger log = Program.GetLogger();
+		const double interval_refresh = 15 * 1000;
+
+
+
+		// Fields.
+		public event EventHandler<ulong>? Delisted;
+
 		public DiscordMessage message;
 		public BulletinData data;
 		public ulong original_id;
@@ -13,11 +22,7 @@ namespace Puck {
 
 		readonly Timer updater;
 
-		static readonly Logger log = Program.GetLogger();
-		const double interval_refresh = 15 * 1000;
-
-		public event EventHandler<ulong>? Delisted;
-
+		// Constructor (all fields are required to be valid).
 		public Bulletin(DiscordMessage message, BulletinData data, ulong original_id) {
 			this.message = message;
 			this.data = data;
@@ -31,6 +36,7 @@ namespace Puck {
 			updater.Start();
 		}
 
+		//  Update logic (same for every Bulletin).
 		public async Task Update() {
 			string bulletin_new = data.ToString();
 			await message.ModifyAsync(bulletin_new);

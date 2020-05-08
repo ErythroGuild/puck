@@ -1,19 +1,8 @@
-﻿using DSharpPlus.Entities;
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace Puck {
 	class Group {
-		public readonly Type type;
-		public int tank, heal, dps; // "any" is treated as dps
-
-		public const Type default_type = Type.Dungeon;
-
-		public enum Role {
-			Tank, Heal, Dps,
-		};
-
 		public enum Type {
 			Dungeon,
 			Raid, Warfront,
@@ -24,6 +13,13 @@ namespace Puck {
 			Other = -1,
 		};
 
+		public enum Role {
+			Tank, Heal, Dps,
+		};
+
+		public const Type default_type = Type.Dungeon;
+
+		// lookup table for command parsing of group type
 		static readonly Dictionary<string, Type> dict_commands_cache;
 		static readonly Dictionary<Type, List<string>> dict_commands =
 			new Dictionary<Type, List<string>> {
@@ -100,6 +96,25 @@ namespace Puck {
 				} },
 			};
 
+		// Parse a command to a strongly typed Type.
+		public static Type ParseType(string command) { return dict_commands_cache[command]; }
+		// Initialize the (sparse) lookup table for accepted commands.
+		static Group() {
+			Dictionary<string, Type> dict = new Dictionary<string, Type>();
+			foreach (Type type in dict_commands.Keys) {
+				foreach (string command in dict_commands[type]) {
+					dict.Add(command, type);
+				}
+			}
+			dict_commands_cache = dict;
+		}
+
+
+
+		public readonly Type type;
+		public int tank, heal, dps; // "any" is treated as dps
+
+		// Constructors. Group.Type *must* always be specified.
 		public Group(Type type) :
 			this(0, 0, 0, type) { }
 		public Group(int tank, int heal, int dps, Type type) {
@@ -109,6 +124,7 @@ namespace Puck {
 			this.dps = dps;
 		}
 
+		// Getters and setters for data members.
 		public void Set(Role role, int n) {
 			switch (role) {
 			case Role.Tank:
@@ -131,10 +147,12 @@ namespace Puck {
 			};
 		}
 
+		// Returns the total size of the group.
 		public int members() {
 			return tank + heal + dps;
 		}
 
+		// Doubles as the DiscordMessage string used for the bulletin.
 		public override string ToString() {
 			string str = "";
 			string box_empty = "\u2610";
@@ -230,19 +248,6 @@ namespace Puck {
 			}
 
 			return str;
-		}
-
-		public static Type ParseType(string command)
-			{ return dict_commands_cache[command]; }
-
-		static Group() {
-			Dictionary<string, Type> dict = new Dictionary<string, Type>();
-			foreach (Type type in dict_commands.Keys) {
-				foreach (string command in dict_commands[type]) {
-					dict.Add(command, type);
-				}
-			}
-			dict_commands_cache = dict;
 		}
 	}
 }

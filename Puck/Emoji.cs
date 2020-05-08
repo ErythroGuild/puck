@@ -11,7 +11,7 @@ namespace Puck {
 			Refresh, Delist,
 		};
 
-		static Dictionary<Type, DiscordEmoji> type_to_emoji =
+		static readonly Dictionary<Type, DiscordEmoji> type_to_emoji =
 			new Dictionary<Type, DiscordEmoji>();
 		// Default emojis if custom emojis could not be found.
 		// Tank:	Shield
@@ -19,7 +19,7 @@ namespace Puck {
 		// Dps:		Bow and Arrow
 		// Refresh:	Counterclockwise Arrows Button
 		// Delist:	Check Mark Button
-		static Dictionary<Type, string> type_to_unicode =
+		static readonly Dictionary<Type, string> type_to_unicode =
 			new Dictionary<Type, string>() {
 				{ Type.Tank,	"\uD83D\uDEE1" },
 				{ Type.Heal,	"\uD83C\uDDE8\uD83C\uDDED" },
@@ -28,7 +28,7 @@ namespace Puck {
 				{ Type.Delist,	"\u2705" },
 			};
 		// Custom emojis (requires a connection to Erythro server).
-		static Dictionary<Type, string> type_to_custom =
+		static readonly Dictionary<Type, string> type_to_custom =
 			new Dictionary<Type, string> {
 				{ Type.Tank,	":r_tank:" },
 				{ Type.Heal,	":r_heal:" },
