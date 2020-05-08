@@ -60,7 +60,7 @@ namespace Puck {
 				// Set "custom status".
 				log.Info("Setting bot custom status...", 1);
 				DiscordActivity helptext =
-					new DiscordActivity(@"#lfg for pings", ActivityType.Watching);
+					new DiscordActivity(@"@Puck -help", ActivityType.Watching);
 				await puck.UpdateStatusAsync(helptext);
 				log.Info("Custom status set.", 1);
 			};
