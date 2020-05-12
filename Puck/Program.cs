@@ -827,8 +827,9 @@ namespace Puck {
 					data.owner.
 					CreateDmChannelAsync();
 				string notification =
-					e.User.ToDiscordMember(e.Guild)!.Nickname +
-					" signed up for your group " +
+					":information_source: " +
+					e.User.ToDiscordMember(e.Guild)!.Nickname.Bold() +
+					" signed up for your group: " +
 					bulletins[message_id].data.title.Bold();
 				await puck.SendMessageAsync(channel, notification);
 			}
