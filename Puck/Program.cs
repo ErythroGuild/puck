@@ -96,8 +96,10 @@ namespace Puck {
 						"Reply to this message to configure me.\n" +
 						("You can also update this later by typing " +
 						"anywhere in the server.").Italics() + "\n" +
-						"@Puck -config channel {channel-name}".Code() + "\n" +
-						"@Puck -config mention {role-name}".Code() + "\n" +
+						"@Puck -config <{server-name}> channel {channel-name}"
+							.Code() + "\n" +
+						"@Puck -config <{server-name}> mention {role-name}"
+							.Code() + "\n" +
 						"The above commands will set my response channel " +
 						"and default mention.\n" +
 						"You can skip the second command, or set it to " +
@@ -421,8 +423,8 @@ namespace Puck {
 				"`@Puck !KSM JY+16 completion` pings the \"KSM\" role, if available.\n" +
 				"`@Puck -raid M BoD mount run` formats the post as a raid group.\n" +
 				"other group types include: `island`, `vision`, etc.\n" +
-				"`@Puck -config channel lfg` sets the post channel.\n" +
-				"`@Puck -config mention none` sets the default mention role.";
+				"`@Puck -config <Erythro> channel lfg` sets the post channel.\n" +
+				"`@Puck -config <Erythro> mention none` sets the default mention role.";
 			await puck.SendMessageAsync(channel, helptext);
 			log.Debug("Help text sent.", 1, channel.Id);
 		}
