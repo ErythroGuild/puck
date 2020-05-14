@@ -26,11 +26,11 @@ To add the bot to your server, use **[this link][1]**. The required permissions 
 Once you add the bot to a server, it will DM you setup instructions. You can
 configure the bot either by replying to the bot, or by messaging in any channel
 the bot has read permissions for. There are only two options:
-1. `@Puck -config channel {channel-name}`
-2. `@Puck -config mention {role-name}`
+1. `@Puck -config channel <{guild-name}> {channel-name}`
+2. `@Puck -config mention <{guild-name}> {role-name}`
 
 You can view the current settings with:
-- `@Puck -config view`
+- `@Puck -config <{guild-name}> view`
 
 **The bot will NOT respond to any messages** until a default channel is set up.
 However, the second command is optional. If a default mention isn't set, then
@@ -41,16 +41,10 @@ Be careful not to actually mention the channel name or role (e.g. `#lfg` or `@ke
 
 **Example:**
 
-`@Puck -config channel pve-lfg`
+`@Puck -config <{guild-name}> channel pve-lfg`
 
 This sets the bot to respond in the channel `#pve-lfg`, and by default the bot
 will *not* mention any roles when creating groups (if one isn't specified).
-
-If you are the owner of multiple servers that contain this bot, and the config
-command was issued through a DM, you will need to specify which server you are
-configuring the bot for. E.g.:
-
-`@Puck -config <Erythro> channel lfg`
 
 ## Usage
 
