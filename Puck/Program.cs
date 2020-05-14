@@ -545,7 +545,7 @@ namespace Puck {
 			}
 
 			await ExportSettings(puck);
-			await puck.SendMessageAsync(channel, "Settings updated. :white_check_mark:");
+			await puck.SendMessageAsync(channel, ":white_check_mark: Settings updated.");
 		}
 
 		static async Task HandleCommand(string command, DiscordUser user, DiscordChannel channel) {
@@ -567,7 +567,7 @@ namespace Puck {
 			}
 			log.Info("Notifying user...", 1, channel.Id);
 			string text_update =
-				"Your preferences have been updated. :white_check_mark:\n" +
+				":white_check_mark: Your preferences have been updated.\n" +
 				"They will apply to all future groups you post.";
 			await puck.SendMessageAsync(channel, text_update);
 			log.Debug("User notified.", 1, channel.Id);

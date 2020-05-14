@@ -49,9 +49,9 @@ namespace Puck {
 				if (do_notify_owner) {
 					string notification = "";
 					notification +=
-						"Your group " +
+						":white_check_mark: Your group " +
 						data.title.Bold() +
-						" has been delisted. :white_check_mark:";
+						" has been delisted.";
 
 					_ = data.owner.SendMessageAsync(notification);  // no need to await
 					log.Info(
