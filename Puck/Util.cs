@@ -1,4 +1,4 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
@@ -71,6 +71,27 @@ namespace Puck {
 				channel = await member.CreateDmChannelAsync();
 			}
 			return channel;
+		}
+
+		// Checks if a DiscordMember has any roles which grant permissions.
+		// Must explicitly grant the permission ("Unset" doesn't count).
+		public static bool MemberHasPermissions(
+			DiscordMember member,
+			Permissions permissions
+		) {
+			bool has_permissions = false;
+			PermissionLevel allowed = PermissionLevel.Allowed;
+
+			foreach (DiscordRole role in member.Roles) {
+				if (role.CheckPermission(permissions) == allowed) {
+					return true;
+				}
+			}
+			if (member.IsOwner) {
+				return true;
+			}
+
+			return has_permissions;
 		}
 
 		// Calculates permissions for the current channel (for inputs).
