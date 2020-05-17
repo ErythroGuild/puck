@@ -674,13 +674,16 @@ namespace Puck {
 				} else {
 					switch (emoji_type) {
 					case Emoji.Type.Tank:
-						data.group.tank = Math.Max(++data.group.tank, 1);
+						if (data.group.tank < 1)
+							++data.group.tank;
 						break;
 					case Emoji.Type.Heal:
-						data.group.heal = Math.Max(++data.group.heal, 1);
+						if (data.group.heal < 1)
+							++data.group.heal;
 						break;
 					case Emoji.Type.Dps:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+						if (data.group.dps < 3)
+							++data.group.dps;
 						break;
 					}
 				}
@@ -799,7 +802,8 @@ namespace Puck {
 				} else {
 					switch (emoji_type) {
 					case Emoji.Type.Dps:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+						if (data.group.dps < 3)
+							++data.group.dps;
 						break;
 					}
 				}
