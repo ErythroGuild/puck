@@ -8,6 +8,11 @@ namespace Puck {
 	static class Util {
 		static readonly Logger log = Program.GetLogger();
 
+		// Limits the input to a ceiling value.
+		public static int Limit(int x, int max) {
+			return (x < max) ? x : max;
+		}
+
 		// Rounds the input to the nearest "five" (keeps as double).
 		public static double RoundToFive(double x) {
 			return Math.Round(x / 5.0) * 5.0;

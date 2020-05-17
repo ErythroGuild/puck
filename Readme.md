@@ -8,6 +8,10 @@ missed the event don't see outdated pings.
 
 There are some convenience features as well (e.g. DM notifications).
 
+`@Puck -help` is the help command. This will DM you a list of commands. This
+can be entered in any server the bot has "Read Messages" permission for, as
+well as DM'd to the bot itself.
+
 You can also find this bot at:
 - **[Discord Bot List][2]**
 - **[Discord Bots][3]**

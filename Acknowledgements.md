@@ -15,6 +15,12 @@ for early feedback and moral support
 
 **Bell** and **Sam**, for helping define the PvP group options
 
+**Boss** from DBL, for feedback on error/help messages
+
+**Chase** and **Neko**, for finding a bug with DPS signups
+
+**Slumbers**, for help fixing and testing said bug
+
 **the DSharpPlus discord server**, for help with programming problems
 
 and **everyone in \<Erythro\>**, for testing, feedback, and help

@@ -674,13 +674,16 @@ namespace Puck {
 				} else {
 					switch (emoji_type) {
 					case Emoji.Type.Tank:
-						data.group.tank = Math.Max(++data.group.tank, 1);
+						if (data.group.tank < 1)
+							++data.group.tank;
 						break;
 					case Emoji.Type.Heal:
-						data.group.heal = Math.Max(++data.group.heal, 1);
+						if (data.group.heal < 1)
+							++data.group.heal;
 						break;
 					case Emoji.Type.Dps:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+						if (data.group.dps < 3)
+							++data.group.dps;
 						break;
 					}
 				}
@@ -799,7 +802,8 @@ namespace Puck {
 				} else {
 					switch (emoji_type) {
 					case Emoji.Type.Dps:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+						if (data.group.dps < 3)
+							++data.group.dps;
 						break;
 					}
 				}
@@ -814,9 +818,11 @@ namespace Puck {
 					bulletins[message_id].
 					data.owner.
 					CreateDmChannelAsync();
+				string text_name = e.User.ToDiscordMember(e.Guild)!.Nickname;
+				if (text_name == "")
+					text_name = e.User.Username;
 				string notification =
-					":information_source: " +
-					e.User.ToDiscordMember(e.Guild)!.Nickname.Bold() +
+					":information_source: " + text_name.Bold() +
 					" signed up for your group: " +
 					bulletins[message_id].data.title.Bold();
 				await puck.SendMessageAsync(channel, notification);
@@ -845,13 +851,13 @@ namespace Puck {
 					break;
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
-					data.group.tank = Math.Min(--data.group.tank, 0);
+					data.group.tank = Math.Max(--data.group.tank, 0);
 					break;
 				case Emoji.Type.Heal:
-					data.group.heal = Math.Min(--data.group.heal, 0);
+					data.group.heal = Math.Max(--data.group.heal, 0);
 					break;
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
@@ -865,13 +871,13 @@ namespace Puck {
 				// since owner reactions aren't auto-removed for these.
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
-					data.group.tank = Math.Min(--data.group.tank, 0);
+					data.group.tank = Math.Max(--data.group.tank, 0);
 					break;
 				case Emoji.Type.Heal:
-					data.group.heal = Math.Min(--data.group.heal, 0);
+					data.group.heal = Math.Max(--data.group.heal, 0);
 					break;
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
@@ -882,7 +888,7 @@ namespace Puck {
 					break;
 				switch (emoji_type) {
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
@@ -896,8 +902,11 @@ namespace Puck {
 					bulletins[message_id].
 					data.owner.
 					CreateDmChannelAsync();
+				string text_name = e.User.ToDiscordMember(e.Guild)!.Nickname;
+				if (text_name == "")
+					text_name = e.User.Username;
 				string notification =
-					e.User.ToDiscordMember(e.Guild)!.Nickname +
+					":information_source: " + text_name.Bold() +
 					" removed themselves from your group " +
 					bulletins[message_id].data.title.Bold();
 				await puck.SendMessageAsync(channel, notification);
