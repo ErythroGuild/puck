@@ -818,9 +818,11 @@ namespace Puck {
 					bulletins[message_id].
 					data.owner.
 					CreateDmChannelAsync();
+				string text_name = e.User.ToDiscordMember(e.Guild)!.Nickname;
+				if (text_name == "")
+					text_name = e.User.Username;
 				string notification =
-					":information_source: " +
-					e.User.ToDiscordMember(e.Guild)!.Nickname.Bold() +
+					":information_source: " + text_name.Bold() +
 					" signed up for your group: " +
 					bulletins[message_id].data.title.Bold();
 				await puck.SendMessageAsync(channel, notification);
@@ -900,8 +902,11 @@ namespace Puck {
 					bulletins[message_id].
 					data.owner.
 					CreateDmChannelAsync();
+				string text_name = e.User.ToDiscordMember(e.Guild)!.Nickname;
+				if (text_name == "")
+					text_name = e.User.Username;
 				string notification =
-					e.User.ToDiscordMember(e.Guild)!.Nickname +
+					":information_source: " + text_name.Bold() +
 					" removed themselves from your group " +
 					bulletins[message_id].data.title.Bold();
 				await puck.SendMessageAsync(channel, notification);
