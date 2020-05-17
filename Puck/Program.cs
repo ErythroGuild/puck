@@ -851,13 +851,13 @@ namespace Puck {
 					break;
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
-					data.group.tank = Math.Min(--data.group.tank, 0);
+					data.group.tank = Math.Max(--data.group.tank, 0);
 					break;
 				case Emoji.Type.Heal:
-					data.group.heal = Math.Min(--data.group.heal, 0);
+					data.group.heal = Math.Max(--data.group.heal, 0);
 					break;
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
@@ -871,13 +871,13 @@ namespace Puck {
 				// since owner reactions aren't auto-removed for these.
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
-					data.group.tank = Math.Min(--data.group.tank, 0);
+					data.group.tank = Math.Max(--data.group.tank, 0);
 					break;
 				case Emoji.Type.Heal:
-					data.group.heal = Math.Min(--data.group.heal, 0);
+					data.group.heal = Math.Max(--data.group.heal, 0);
 					break;
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
@@ -888,7 +888,7 @@ namespace Puck {
 					break;
 				switch (emoji_type) {
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
