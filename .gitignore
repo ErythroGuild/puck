@@ -1,4 +1,7 @@
-## Bot Secrets
+## Resource files
+rc/*.png
+
+## Bot secrets
 token.txt
 settings.txt
 blocklist.txt
