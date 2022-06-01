@@ -22,6 +22,20 @@ class Group {
 		new (owner, true, true, max, max, max);
 	public static Group WithRoles(DiscordMember owner, int tank, int heal, int dps) =>
 		new (owner, false, true, tank, heal, dps);
+	// Hidden constructor.
+	private Group(
+		DiscordMember owner,
+		bool acceptAnyRole,
+		bool hasMaxCount,
+		int tank, int heal, int dps
+	) {
+		Owner = owner;
+		_acceptAnyRole = acceptAnyRole;
+		_hasMaxCount = hasMaxCount;
+		_tankMax = tank;
+		_healMax = heal;
+		_dpsMax = dps;
+	}
 
 	// Cycle through valid role states (as the owner).
 	public void CycleTank() { Cycle(_tankList, _tankMax); }
@@ -118,19 +132,5 @@ class Group {
 		}
 
 		return output.ToLines();
-	}
-
-	private Group(
-		DiscordMember owner,
-		bool acceptAnyRole,
-		bool hasMaxCount,
-		int tank, int heal, int dps
-	) {
-		Owner = owner;
-		_acceptAnyRole = acceptAnyRole;
-		_hasMaxCount = hasMaxCount;
-		_tankMax = tank;
-		_healMax = heal;
-		_dpsMax = dps;
 	}
 }
