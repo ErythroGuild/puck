@@ -1,4 +1,4 @@
-﻿namespace Puck;
+namespace Puck;
 
 class Group {
 	public readonly bool AcceptAnyRole;
@@ -8,8 +8,21 @@ class Group {
 	public int Heal => _healList.Count;
 	public int Dps  => _dpsList.Count;
 	public int Members => Tank + Heal + Dps;
+	public string Type { get {
+		if (!HasMaxCount)
+			return "raid group";
 
-	private readonly int _tankMax, _healMax, _dpsMax;
+		int max = AcceptAnyRole
+		? _tankMax
+		: _tankMax + _healMax + _dpsMax;
+		string composition = AcceptAnyRole
+		? "any"
+		: string.Join("-", _tankMax, _healMax, _dpsMax);
+
+		return $"{max}-man group ({composition})";
+	} }
+
+private readonly int _tankMax, _healMax, _dpsMax;
 	private readonly List<DiscordUser>
 		_tankList = new (),
 		_healList = new (),
@@ -89,20 +102,6 @@ class Group {
 		_dpsList.RemoveAll((member_i) => member_i == member);
 	}
 
-	// Prints the group type, unformatted (a plain string).
-	public string PrintGroupType() {
-		if (!HasMaxCount)
-			return "raid group";
-
-		int max = AcceptAnyRole
-			? _tankMax
-			: _tankMax + _healMax + _dpsMax;
-		string composition = AcceptAnyRole
-			? "any"
-			: string.Join("-", _tankMax, _healMax, _dpsMax);
-
-		return $"{max}-man group ({composition})";
-	}
 	// Prints a formatted list of all members in the group, as well
 	// as any open spots (depending on the type of group defined).
 	public string PrintMemberList(Emojis e) {
