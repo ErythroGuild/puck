@@ -1,14 +1,14 @@
 ﻿namespace Puck;
 
 class Group {
+	public readonly bool AcceptAnyRole;
+	public readonly bool HasMaxCount;
 	public readonly DiscordMember Owner;
 	public int Tank => _tankList.Count;
 	public int Heal => _healList.Count;
 	public int Dps  => _dpsList.Count;
 	public int Members => Tank + Heal + Dps;
 
-	private readonly bool _acceptAnyRole;
-	private readonly bool _hasMaxCount;
 	private readonly int _tankMax, _healMax, _dpsMax;
 	private readonly List<DiscordMember>
 		_tankList = new (),
@@ -30,8 +30,8 @@ class Group {
 		int tank, int heal, int dps
 	) {
 		Owner = owner;
-		_acceptAnyRole = acceptAnyRole;
-		_hasMaxCount = hasMaxCount;
+		AcceptAnyRole = acceptAnyRole;
+		HasMaxCount = hasMaxCount;
 		_tankMax = tank;
 		_healMax = heal;
 		_dpsMax = dps;
@@ -42,10 +42,10 @@ class Group {
 	public void CycleHeal() { Cycle(_healList, _healMax); }
 	public void CycleDps()  { Cycle(_dpsList , _dpsMax ); }
 	private void Cycle(List<DiscordMember> members, int max) {
-		bool canAdd = _acceptAnyRole
+		bool canAdd = AcceptAnyRole
 			? Members < max
 			: members.Count < max;
-		if (!_hasMaxCount)
+		if (!HasMaxCount)
 			canAdd = true;
 
 		if (canAdd) {
@@ -68,10 +68,10 @@ class Group {
 	public void AddDps(DiscordMember member)
 		{ Add(member, _dpsList, _dpsMax); }
 	private void Add(DiscordMember member, List<DiscordMember> members, int max) {
-		bool canAdd = _acceptAnyRole
+		bool canAdd = AcceptAnyRole
 			? Members < max
 			: members.Count < max;
-		if (!_hasMaxCount)
+		if (!HasMaxCount)
 			canAdd = true;
 
 		// Ensure member isn't in another group already.
@@ -91,13 +91,13 @@ class Group {
 
 	// Prints the group type, unformatted (a plain string).
 	public string PrintGroupType() {
-		if (!_hasMaxCount)
+		if (!HasMaxCount)
 			return "raid group";
 
-		int max = _acceptAnyRole
+		int max = AcceptAnyRole
 			? _tankMax
 			: _tankMax + _healMax + _dpsMax;
-		string composition = _acceptAnyRole
+		string composition = AcceptAnyRole
 			? "any"
 			: string.Join("-", _tankMax, _healMax, _dpsMax);
 
@@ -115,7 +115,7 @@ class Group {
 					: member.Mention;
 				output.Add($"{emoji} - {name}");
 			}
-			if (_hasMaxCount && !_acceptAnyRole) {
+			if (HasMaxCount && !AcceptAnyRole) {
 				for (int i=members.Count; i<max; i++)
 					output.Add($"{emoji} - **[ Open ]**");
 			}
@@ -126,7 +126,7 @@ class Group {
 
 		// Print available spots if there is a max count, and any
 		// role is accepted.
-		if (_hasMaxCount && _acceptAnyRole) {
+		if (HasMaxCount && AcceptAnyRole) {
 			for (int i=Members; i<_tankMax; i++)
 				output.Add("**[ Open ]**");
 		}
