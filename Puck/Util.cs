@@ -1,11 +1,22 @@
-﻿using DSharpPlus;
+using DSharpPlus;
 using DSharpPlus.Entities;
 
+using System;
 using System.Threading.Tasks;
 
 namespace Puck {
 	static class Util {
 		static readonly Logger log = Program.GetLogger();
+
+		// Limits the input to a ceiling value.
+		public static int Limit(int x, int max) {
+			return (x < max) ? x : max;
+		}
+
+		// Rounds the input to the nearest "five" (keeps as double).
+		public static double RoundToFive(double x) {
+			return Math.Round(x / 5.0) * 5.0;
+		}
 
 		// Formats the DiscordUser as "Name#0000".
 		public static string Userstring(this DiscordUser u) {
@@ -65,6 +76,27 @@ namespace Puck {
 				channel = await member.CreateDmChannelAsync();
 			}
 			return channel;
+		}
+
+		// Checks if a DiscordMember has any roles which grant permissions.
+		// Must explicitly grant the permission ("Unset" doesn't count).
+		public static bool MemberHasPermissions(
+			DiscordMember member,
+			Permissions permissions
+		) {
+			bool has_permissions = false;
+			PermissionLevel allowed = PermissionLevel.Allowed;
+
+			foreach (DiscordRole role in member.Roles) {
+				if (role.CheckPermission(permissions) == allowed) {
+					return true;
+				}
+			}
+			if (member.IsOwner) {
+				return true;
+			}
+
+			return has_permissions;
 		}
 
 		// Calculates permissions for the current channel (for inputs).

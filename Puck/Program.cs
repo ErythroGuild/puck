@@ -53,20 +53,21 @@ namespace Puck {
 			puck.Ready += async e => {
 				log.Info("Connected to discord.");
 
-				// Initialize emojis.
-				log.Debug("Setting up emojis...", 1);
-				Emoji.Init(puck);
-
 				// Set "custom status".
 				log.Info("Setting bot custom status...", 1);
 				DiscordActivity helptext =
-					new DiscordActivity(@"#lfg for pings", ActivityType.Watching);
+					new DiscordActivity(@"@Puck -help", ActivityType.Watching);
 				await puck.UpdateStatusAsync(helptext);
 				log.Info("Custom status set.", 1);
 			};
 
 			puck.GuildDownloadCompleted += async e => {
 				log.Info("Connected to specific servers.");
+
+				// Initialize emojis.
+				log.Debug("Setting up emojis...", 1);
+				Emoji.Init(puck);
+
 				log.Debug("Populating server-specific settings...");
 
 				// Set up default config
@@ -95,8 +96,10 @@ namespace Puck {
 						"Reply to this message to configure me.\n" +
 						("You can also update this later by typing " +
 						"anywhere in the server.").Italics() + "\n" +
-						"@Puck -config channel {channel-name}".Code() + "\n" +
-						"@Puck -config mention {role-name}".Code() + "\n" +
+						"@Puck -config <{server-name}> channel {channel-name}"
+							.Code() + "\n" +
+						"@Puck -config <{server-name}> mention {role-name}"
+							.Code() + "\n" +
 						"The above commands will set my response channel " +
 						"and default mention.\n" +
 						"You can skip the second command, or set it to " +
@@ -420,8 +423,8 @@ namespace Puck {
 				"`@Puck !KSM JY+16 completion` pings the \"KSM\" role, if available.\n" +
 				"`@Puck -raid M BoD mount run` formats the post as a raid group.\n" +
 				"other group types include: `island`, `vision`, etc.\n" +
-				"`@Puck -config channel lfg` sets the post channel.\n" +
-				"`@Puck -config mention none` sets the default mention role.";
+				"`@Puck -config <Erythro> channel lfg` sets the post channel.\n" +
+				"`@Puck -config <Erythro> mention none` sets the default mention role.";
 			await puck.SendMessageAsync(channel, helptext);
 			log.Debug("Help text sent.", 1, channel.Id);
 		}
@@ -460,71 +463,57 @@ namespace Puck {
 			}
 
 			// Figure out which guild is being configured
-			DiscordUser owner = message.Author;
-			List<DiscordGuild> guilds_owned = GetOwnedGuilds(owner);
 			DiscordGuild? guild_config = null;
-			switch (guilds_owned.Count) {
-			// only triggers default: if somehow List size is negative?
-			default:
-				log.Error("Server owners `List<>.Count` is negative.", 0, message.Id);
-				log.Info("User: " + owner.Userstring(), 0, message.Id);
-				return;
-			case 0:
-				log.Warning("Could not find any owned servers.", 1, message.Id);
-				log.Debug("User: " + owner.Userstring(), 1, message.Id);
-				return;
-			case var _ when (guilds_owned.Count > 1):
-				if (command_guild == string.Empty) {
-					if (!message.Channel.IsPrivate) {
-						log.Info("Detected server from message channel.", 1, message.Id);
-						guild_config = message.Channel.Guild;
-						break;
-					}
-					log.Warning("Owner of multiple guilds.", 1, message.Id);
-					log.Info("User: " + owner.Userstring(), 1, message.Id);
-					foreach (DiscordGuild guild in guilds_owned) {
-						log.Debug(guild.Name, 2, message.Id);
-					}
-					string helptext =
-						"You are the owner of multiple servers :confused:\n" +
-						"You'll need to specify which server to configure, e.g.:\n" +
-						("@Puck -config " + guilds_owned[0].Guildstring() +
-						" channel {channel-name}").Code();
-					await puck.SendMessageAsync(channel, helptext);
-					return;
-				}
-				foreach (DiscordGuild guild in guilds_owned) {
+			if (!message.Channel.IsPrivate) {
+				log.Info("Detected server from message channel.", 1, message.Id);
+				guild_config = message.Channel.Guild;
+			} else if (command_guild != string.Empty) {
+				foreach (DiscordGuild guild in puck.Guilds.Values) {
 					if (guild.Name == command_guild) {
+						log.Info("Found matching server.", 1, message.Id);
 						guild_config = guild;
 						break;
 					}
 				}
-				if (guild_config == null) {
-					log.Warning("Could not find <" + command_guild + ">", 1, message.Id);
-					log.Info("User: " + owner.Userstring(), 1, message.Id);
-					foreach (DiscordGuild guild in guilds_owned) {
-						log.Debug(guild.Name, 2, message.Id);
-					}
-					string helptext =
-						"Could not find your specified server :confused:\n" +
-						"You may not have permissions to that server.";
-					await puck.SendMessageAsync(channel, helptext);
-					return;
-				}
-				break;
-			case 1:
-				guild_config = guilds_owned[0];
-				if (
-					guild_config.Name != command_guild &&
-					command_guild != string.Empty
-				) {
-					log.Warning("Specified server does not match owned server.", 1, message.Id);
-					log.Info("Specified server: <" + command_guild +">", 2, message.Id);
-					log.Info("Owned server:     " + guild_config.Guildstring(), 2, message.Id);
-				}
-				break;
+			} else {
+				log.Warning("No server specified to config.", 1, message.Id);
+				string text_help =
+					":warning: " +
+					"You'll need to specify which server to configure. e.g.:\n" +
+					"@Puck -config <Erythro> channel general".Code();
+				await puck.SendMessageAsync(channel, text_help);
+				return;
+			}
+			if (guild_config == null) {
+				log.Warning("No matching servers found.", 1, message.Id);
+				string text_help =
+					":warning: No servers found with the name " +
+					command_guild.Bold();
+				await puck.SendMessageAsync(channel, text_help);
+				return;
 			}
 			log.Info("Server to configure: " + guild_config.Name, 1, message.Id);
+
+			// Check for permission to configure server
+			DiscordMember? member_author =
+				message.Author.ToDiscordMember(guild_config);
+			bool has_permission = false;
+			if (member_author == null) {
+				log.Warning("User is not a member of requested server.", 1, message.Id);
+			} else {
+				has_permission = Util.MemberHasPermissions(
+					member_author,
+					Permissions.ManageGuild
+				);
+			}
+			if (!has_permission) {
+				log.Info("User doesn't have permission to config server.", 1, message.Id);
+				string text_permission =
+					":warning: " +
+					"You don't have permissions to manage that server.";
+				await puck.SendMessageAsync(channel, text_permission);
+				return;
+			}
 
 			// Set configuration settings
 			log.Info("Setting configuration...", 1, message.Id);
@@ -558,7 +547,7 @@ namespace Puck {
 			}
 
 			await ExportSettings(puck);
-			await puck.SendMessageAsync(channel, "Settings updated. :white_check_mark:");
+			await puck.SendMessageAsync(channel, ":white_check_mark: Settings updated.");
 		}
 
 		static async Task HandleCommand(string command, DiscordUser user, DiscordChannel channel) {
@@ -580,7 +569,7 @@ namespace Puck {
 			}
 			log.Info("Notifying user...", 1, channel.Id);
 			string text_update =
-				"Your preferences have been updated. :white_check_mark:\n" +
+				":white_check_mark: Your preferences have been updated.\n" +
 				"They will apply to all future groups you post.";
 			await puck.SendMessageAsync(channel, text_update);
 			log.Debug("User notified.", 1, channel.Id);
@@ -603,6 +592,9 @@ namespace Puck {
 			case Group.Type.Dungeon:
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
+			case Group.Type.Arenas:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Vision:
 			case Group.Type.Other:
 				await message.CreateReactionAsync(Emoji.From(Emoji.Type.Tank));
@@ -682,13 +674,16 @@ namespace Puck {
 				} else {
 					switch (emoji_type) {
 					case Emoji.Type.Tank:
-						data.group.tank = Math.Max(++data.group.tank, 1);
+						if (data.group.tank < 1)
+							++data.group.tank;
 						break;
 					case Emoji.Type.Heal:
-						data.group.heal = Math.Max(++data.group.heal, 1);
+						if (data.group.heal < 1)
+							++data.group.heal;
 						break;
 					case Emoji.Type.Dps:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+						if (data.group.dps < 3)
+							++data.group.dps;
 						break;
 					}
 				}
@@ -696,6 +691,8 @@ namespace Puck {
 				break;
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Other:
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
@@ -707,6 +704,88 @@ namespace Puck {
 				case Emoji.Type.Dps:
 					++data.group.dps;
 					break;
+				}
+				UpdateData();
+				break;
+			case Group.Type.Arenas:
+				if (is_owner) {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 3)
+							++data.group.tank;
+						else
+							data.group.tank = 0;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 3)
+							++data.group.heal;
+						else
+							data.group.heal = 0;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 3)
+							++data.group.dps;
+						else
+							data.group.dps = 0;
+						break;
+					}
+					DeleteReaction();
+				} else {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 3)
+							++data.group.tank;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 3)
+							++data.group.heal;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 3)
+							++data.group.dps;
+						break;
+					}
+				}
+				UpdateData();
+				break;
+			case Group.Type.Vision:
+				if (is_owner) {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 5)
+							++data.group.tank;
+						else
+							data.group.tank = 0;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 5)
+							++data.group.heal;
+						else
+							data.group.heal = 0;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 5)
+							++data.group.dps;
+						else
+							data.group.dps = 0;
+						break;
+					}
+					DeleteReaction();
+				} else {
+					switch (emoji_type) {
+					case Emoji.Type.Tank:
+						if (data.group.members() < 5)
+							++data.group.tank;
+						break;
+					case Emoji.Type.Heal:
+						if (data.group.members() < 5)
+							++data.group.heal;
+						break;
+					case Emoji.Type.Dps:
+						if (data.group.members() < 5)
+							++data.group.dps;
+						break;
+					}
 				}
 				UpdateData();
 				break;
@@ -723,26 +802,10 @@ namespace Puck {
 				} else {
 					switch (emoji_type) {
 					case Emoji.Type.Dps:
-						data.group.dps = Math.Max(++data.group.dps, 3);
+						if (data.group.dps < 3)
+							++data.group.dps;
 						break;
 					}
-				}
-				UpdateData();
-				break;
-			case Group.Type.Vision:
-				switch (emoji_type) {
-				case Emoji.Type.Tank:
-					if (data.group.members() < 5)
-						++data.group.tank;
-					break;
-				case Emoji.Type.Heal:
-					if (data.group.members() < 5)
-						++data.group.heal;
-					break;
-				case Emoji.Type.Dps:
-					if (data.group.members() < 5)
-						++data.group.dps;
-					break;
 				}
 				UpdateData();
 				break;
@@ -755,9 +818,12 @@ namespace Puck {
 					bulletins[message_id].
 					data.owner.
 					CreateDmChannelAsync();
+				string text_name = e.User.ToDiscordMember(e.Guild)!.Nickname;
+				if (text_name == "")
+					text_name = e.User.Username;
 				string notification =
-					e.User.ToDiscordMember(e.Guild)!.Nickname +
-					" signed up for your group " +
+					":information_source: " + text_name.Bold() +
+					" signed up for your group: " +
 					bulletins[message_id].data.title.Bold();
 				await puck.SendMessageAsync(channel, notification);
 			}
@@ -779,36 +845,39 @@ namespace Puck {
 			// Group.Type-specific controls
 			switch (bulletins[message_id].data.group.type) {
 			case Group.Type.Dungeon:
+			case Group.Type.Arenas:
+			case Group.Type.Vision:
 				if (is_owner)
 					break;
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
-					data.group.tank = Math.Min(--data.group.tank, 0);
+					data.group.tank = Math.Max(--data.group.tank, 0);
 					break;
 				case Emoji.Type.Heal:
-					data.group.heal = Math.Min(--data.group.heal, 0);
+					data.group.heal = Math.Max(--data.group.heal, 0);
 					break;
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
 				break;
 			case Group.Type.Raid:
 			case Group.Type.Warfront:
-			case Group.Type.Vision:
+			case Group.Type.RBG:
+			case Group.Type.Battleground:
 			case Group.Type.Other:
 				// Not `break`ing if the reaction was by the owner,
 				// since owner reactions aren't auto-removed for these.
 				switch (emoji_type) {
 				case Emoji.Type.Tank:
-					data.group.tank = Math.Min(--data.group.tank, 0);
+					data.group.tank = Math.Max(--data.group.tank, 0);
 					break;
 				case Emoji.Type.Heal:
-					data.group.heal = Math.Min(--data.group.heal, 0);
+					data.group.heal = Math.Max(--data.group.heal, 0);
 					break;
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
@@ -819,7 +888,7 @@ namespace Puck {
 					break;
 				switch (emoji_type) {
 				case Emoji.Type.Dps:
-					data.group.dps = Math.Min(--data.group.dps, 0);
+					data.group.dps = Math.Max(--data.group.dps, 0);
 					break;
 				}
 				bulletins[message_id].data = data;
@@ -833,8 +902,11 @@ namespace Puck {
 					bulletins[message_id].
 					data.owner.
 					CreateDmChannelAsync();
+				string text_name = e.User.ToDiscordMember(e.Guild)!.Nickname;
+				if (text_name == "")
+					text_name = e.User.Username;
 				string notification =
-					e.User.ToDiscordMember(e.Guild)!.Nickname +
+					":information_source: " + text_name.Bold() +
 					" removed themselves from your group " +
 					bulletins[message_id].data.title.Bold();
 				await puck.SendMessageAsync(channel, notification);

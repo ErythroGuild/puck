@@ -1,63 +1,10 @@
-using DSharpPlus;
 using DSharpPlus.Entities;
 
 using System;
 
 namespace Puck {
 	class BulletinData {
-		public DiscordMember owner;
-		public string title;
-		public MentionRole? mention;
-		public DateTimeOffset expiry;
-		public Group group;
-
-		private BulletinData(
-			DiscordMember owner,
-			string title,
-			MentionRole? mention,
-			DateTimeOffset expiry,
-			Group group
-		) {
-			this.owner = owner;
-			this.title = title;
-			this.mention = mention;
-			this.expiry = expiry;
-			this.group = group;
-		}
-
-		public override string ToString() {
-			string post = "";
-			bool is_expired = (expiry <= DateTimeOffset.Now);
-
-			// @mention + group title
-			if (mention != null && !is_expired) {
-				post += mention.Mention() + " ";
-			}
-			string title_str = title.Bold();
-			if (is_expired)
-				title_str = title_str.Strike();
-			post += title_str + "\n";
-
-			// group
-			post += "group lead: " + owner.Mention + "\n";
-			post += group.ToString() + "\n";
-
-			// expiry time
-			TimeSpan expiry_round = expiry - DateTimeOffset.Now;
-			static double RoundToFive(double x) { return Math.Round(x / 5.0) * 5.0; }
-			double seconds_round = RoundToFive(expiry_round.TotalSeconds);
-			expiry_round = TimeSpan.FromSeconds(seconds_round);
-
-			string delist_str =
-				"this group will be delisted in ~" +
-				expiry_round.ToString(@"mm\:ss");
-			if (is_expired)
-				delist_str = "this group has been delisted";
-			post += delist_str.Italics();
-
-			return post;
-		}
-
+		// Static serialization/deserialization methods.
 		public static BulletinData Parse(
 			string command_option,
 			string command_mention,
@@ -101,6 +48,67 @@ namespace Puck {
 			);
 
 			return data;
+		}
+
+		public static string ToString(BulletinData data) {
+			string post = "";
+			bool is_expired = (data.expiry <= DateTimeOffset.Now);
+
+			// @mention + group title
+			if (data.mention != null && !is_expired) {
+				post += data.mention.Mention() + " ";
+			}
+			string title_str = data.title.Bold();
+			if (is_expired)
+				title_str = title_str.Strike();
+			post += title_str + "\n";
+
+			// group
+			post += "group lead: " + data.owner.Mention + "\n";
+			post += data.group.ToString() + "\n";
+
+			// expiry time
+			TimeSpan expiry_round = data.expiry - DateTimeOffset.Now;
+			double seconds_round = Util.RoundToFive(expiry_round.TotalSeconds);
+			expiry_round = TimeSpan.FromSeconds(seconds_round);
+
+			string delist_str =
+				"this group will be delisted in ~" +
+				expiry_round.ToString(@"mm\:ss");
+			if (is_expired)
+				delist_str = "this group has been delisted";
+			post += delist_str.Italics();
+
+			return post;
+		}
+
+
+
+		public DiscordMember owner;
+		public string title;
+		public MentionRole? mention;
+		public DateTimeOffset expiry;
+		public Group group;
+
+		// Hiding constructor.
+		// Force BulletinData to be instantiated with Parse().
+		private BulletinData(
+			DiscordMember owner,
+			string title,
+			MentionRole? mention,
+			DateTimeOffset expiry,
+			Group group
+		) {
+			this.owner = owner;
+			this.title = title;
+			this.mention = mention;
+			this.expiry = expiry;
+			this.group = group;
+		}
+
+		// Non-static serialization.
+		public override string ToString() {
+			return ToString(this);
 		}
 	}
 }
