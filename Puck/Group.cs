@@ -1,9 +1,10 @@
-namespace Puck;
+﻿namespace Puck;
 
 class Group {
 	public readonly bool AcceptAnyRole;
 	public readonly bool HasMaxCount;
 	public readonly DiscordUser Owner;
+	public DiscordMember? OwnerMember => Owner as DiscordMember;
 	public int Tank => _tankList.Count;
 	public int Heal => _healList.Count;
 	public int Dps  => _dpsList.Count;
