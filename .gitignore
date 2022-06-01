@@ -6,8 +6,8 @@
 rc/*.png
 
 # Scripts
-Puck/remote-stop.ps1
-Puck/remote-start.ps1
+Puck/scripts/remote-stop.ps1
+Puck/scripts/remote-start.ps1
 
 # Bot secrets
 Puck/config/token.txt
