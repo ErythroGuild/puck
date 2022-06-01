@@ -12,8 +12,8 @@ Puck/remote-start.ps1
 # Bot secrets
 Puck/config/token.txt
 Puck/config/token_debug.txt
-Puck/config/settings.txt
-Puck/config/blocklist.txt
+Puck/config/tag.txt
+Puck/config/commit.txt
 
 # Bot data
 Puck/data/*.sqlite
