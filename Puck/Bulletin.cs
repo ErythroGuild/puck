@@ -6,6 +6,66 @@ class Bulletin {
 	// indexed by (first post = the embed) message id
 	private static readonly ConcurrentDictionary<ulong, Bulletin> _bulletins = new ();
 
+	static Bulletin() {
+		Program.Client.ComponentInteractionCreated += async (client, e) => {
+			ulong id = e.Message.Id;
+			if (!_bulletins.ContainsKey(id))
+				return;
+
+			e.Handled = true;
+			Bulletin bulletin = _bulletins[id];
+			// Any registered messages can be responded to.
+			await e.Interaction.CreateResponseAsync(
+				InteractionResponseType.DeferredMessageUpdate
+			);
+
+			// Queue up action.
+			bulletin._actions.Add(new Task(async () => {
+				// Cancelling is the same for owner and not.
+				if (e.Id == _idCancel)
+					bulletin.Group.Remove(e.User);
+
+				// Handle signups.
+				if (e.User != bulletin.Owner) {
+					switch (e.Id) {
+					case _idTank:
+						bulletin.Group.AddTank(e.User);
+						break;
+					case _idHeal:
+						bulletin.Group.AddHeal(e.User);
+						break;
+					case _idDps:
+						bulletin.Group.AddDps(e.User);
+						break;
+					}
+				}
+
+				// Handle configuration.
+				if (e.User == bulletin.Owner) {
+					switch (e.Id) {
+					case _idTank:
+						bulletin.Group.CycleTank();
+						break;
+					case _idHeal:
+						bulletin.Group.CycleHeal();
+						break;
+					case _idDps:
+						bulletin.Group.CycleDps();
+						break;
+					case _idRefresh:
+						bulletin.AddTime();
+						break;
+					case _idDelist:
+						await bulletin.Delist();
+						break;
+					}
+				}
+
+				await bulletin.Update();
+			}));
+		};
+	}
+
 	public readonly string Title;
 	public readonly string Description;
 	public readonly IMention? Mention;
@@ -15,8 +75,9 @@ class Bulletin {
 	public DateTimeOffset Expiry { get; private set; }
 
 	private readonly Timer _timer;
-	private DiscordThreadChannel? _thread;
-	private DiscordMessage? _message;
+	private DiscordThreadChannel? _thread = null;
+	private DiscordMessage? _message = null;
+	private readonly TaskQueue _actions = new ();
 	private readonly Emojis _e;
 
 	private readonly TimeSpan
@@ -47,9 +108,6 @@ class Bulletin {
 		Mention = mention;
 		Group = group;
 		Expiry = DateTimeOffset.Now + duration;
-
-		_thread = null;
-		_message = null;
 		_e = e;
 
 		_timer = CreateTimer(duration, false);
@@ -87,8 +145,10 @@ class Bulletin {
 	}
 
 	private async Task Update() {
-		if (_message is not null)
-			await _message.ModifyAsync(GetMessage(true));
+		if (_message is not null) {
+			if (_bulletins.ContainsKey(_message.Id))
+				await _message.ModifyAsync(GetMessage(true));
+		}
 	}
 	private DiscordMessageBuilder GetMessage(bool isEnabled) {
 		DiscordColor color = Group.HasMaxCount
