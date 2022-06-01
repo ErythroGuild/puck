@@ -12,9 +12,9 @@ class Emojis {
 		DiscordEmoji GetEmoji(ulong id) =>
 			DiscordEmoji.FromGuildEmote(client, id);
 
-		Tank = GetEmoji(708431859369115790);
-		Heal = GetEmoji(708431859435962418);
-		Dps  = GetEmoji(708431859385630862);
+		Tank = GetEmoji(981422648322064395);
+		Heal = GetEmoji(981422648275914805);
+		Dps  = GetEmoji(981422648271712276);
 		Cancel  = GetEmoji(981425774190030848);
 		Refresh = GetEmoji(981425774726885406);
 		Delist  = GetEmoji(981425774101921823);
