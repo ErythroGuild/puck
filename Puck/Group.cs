@@ -1,7 +1,7 @@
 ﻿namespace Puck;
 
 class Group {
-	public DiscordMember Owner { get; init; }
+	public readonly DiscordMember Owner;
 	public int Tank => _tankList.Count;
 	public int Heal => _healList.Count;
 	public int Dps  => _dpsList.Count;
@@ -87,7 +87,7 @@ class Group {
 			? "any"
 			: string.Join("-", _tankMax, _healMax, _dpsMax);
 
-		return $"{max}-person group ({composition})";
+		return $"{max}-man group ({composition})";
 	}
 	// Prints a formatted list of all members in the group, as well
 	// as any open spots (depending on the type of group defined).
