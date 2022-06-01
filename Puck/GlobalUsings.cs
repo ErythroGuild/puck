@@ -21,3 +21,6 @@ global using Serilog;
 
 // Project namespaces.
 global using Puck.Utils;
+
+// Static usings.
+global using static Puck.Utils.Util;
