@@ -1,7 +1,7 @@
 ﻿namespace Puck;
 
 class TaskQueue {
-	public bool IsRunning => _task.IsCompleted;
+	public bool IsRunning => !_task.IsCompleted;
 
 	private readonly ConcurrentQueue<Task> _queue = new ();
 	private Task _task = Task.CompletedTask;
