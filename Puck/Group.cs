@@ -23,7 +23,7 @@ class Group {
 		return $"{max}-man group ({composition})";
 	} }
 
-private readonly int _tankMax, _healMax, _dpsMax;
+	private readonly int _tankMax, _healMax, _dpsMax;
 	private readonly List<DiscordUser>
 		_tankList = new (),
 		_healList = new (),
@@ -68,8 +68,6 @@ private readonly int _tankMax, _healMax, _dpsMax;
 			int removed = members.RemoveAll(
 				(member) => member == Owner
 			);
-			if (removed > 0)
-				members.Add(Owner);
 		}
 	}
 
