@@ -8,6 +8,8 @@ static partial class Util {
 		new List<DiscordAttachment>(interaction.Data.Resolved.Attachments.Values)[0];
 	public static DiscordChannel GetTargetChannel(this DiscordInteraction interaction) =>
 		new List<DiscordChannel>(interaction.Data.Resolved.Channels.Values)[0];
+	public static DiscordRole GetTargetRole(this DiscordInteraction interaction) =>
+		new List<DiscordRole>(interaction.Data.Resolved.Roles.Values)[0];
 	public static DiscordMember GetTargetMember(this DiscordInteraction interaction) =>
 		new List<DiscordMember>(interaction.Data.Resolved.Members.Values)[0];
 	public static DiscordMessage GetTargetMessage(this DiscordInteraction interaction) =>
@@ -22,6 +24,11 @@ static partial class Util {
 		(option.Options is not null)
 			? new (option.Options)
 			: new ();
+
+	public static bool HasArg(Dictionary<string, object> args, string key) =>
+		args.ContainsKey(key);
+	public static T GetArg<T>(Dictionary<string, object> args, string key) =>
+		(T)args[key];
 
 	// Convenience methods for responding to interactions.
 	public static Task DeferComponentAsync(this DiscordInteraction interaction) =>

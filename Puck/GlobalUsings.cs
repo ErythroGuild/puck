@@ -27,3 +27,4 @@ global using static Puck.Utils.Util;
 global using Command = DSharpPlus.Entities.DiscordApplicationCommand;
 global using CommandOption = DSharpPlus.Entities.DiscordApplicationCommandOption;
 global using CommandChoice = DSharpPlus.Entities.DiscordApplicationCommandOptionChoice;
+global using InteractionArg = DSharpPlus.Entities.DiscordInteractionDataOption;
