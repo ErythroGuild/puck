@@ -7,11 +7,12 @@ class Help : CommandHandler {
 
 	private readonly Emojis _emojis;
 	private const string
-		_bbul = "\u2022",
-		_wbul = "\u25E6",
+		_zwsp = "\u200B",
 		_ensp = "\u2002",
 		_emsp = "\u2003",
-		_zwsp = "\u200B";
+		_bbul = "\u2022",
+		_wbul = "\u25E6",
+		_arrr = "\u2192";
 	private const string
 		_commandHelp = "help";
 
@@ -30,7 +31,10 @@ class Help : CommandHandler {
 	private Task HelpAsync(DiscordInteraction interaction, Dictionary<string, object> _) {
 		string helptext =
 			$"""
-			**Group Signup**
+			**Sign Up**
+			Pressing one of the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) signs you up for that role.
+			If you're already signed up for a different role, you'll be switched to the new role.
+			Press the {_emojis.Cancel} button to cancel any roles you've signed up for.
 
 			**List Group**
 			**`/lfg`** creates a new thread for your group.
@@ -40,11 +44,13 @@ class Help : CommandHandler {
 			`group-type` is "5-man (1-1-3)" by default. "Raid group" has a cap of 40 members.
 			`duration` is 5 minutes by default. The thread will be archived after this time.
 
-			**Group Setup**
+			**Set Up Group**
+			Use the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) to pre-fill roles in your group.
+			Pressing the {_emojis.Cancel} button will clear *all* spots you've pre-filled.
 
 			**Configure**
 			**`/config`** customizes the bot for your server.
-			*Note: use Server Settings -> Integrations to set up allowed channels.*
+			*Note: use Server Settings {_arrr} Integrations to set up allowed channels.*
 			`/config help` displays a guide with further details.
 			""";
 		return interaction.CreateResponseAsync(
