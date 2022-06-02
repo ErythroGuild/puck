@@ -35,7 +35,7 @@ class LFG : CommandHandler {
 		_choice5_any = "5-any",
 		_choice6_any = "6-any",
 		_choice8_224 = "8-224",
-		_choiceRaid  = "raid";
+		_choiceRaid  = "raid" ;
 
 	public LFG(Emojis emojis) {
 		Tree = new (
@@ -129,8 +129,7 @@ class LFG : CommandHandler {
 			: Group.WithRoles(owner, 1, 1, 3);
 
 		TaskCompletionSource<DiscordThreadChannel> thread_promise = new ();
-
-		Bulletin bulletin = new (
+		_ = new Bulletin(
 			title,
 			description,
 			mention,

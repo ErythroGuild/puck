@@ -1,7 +1,7 @@
 ﻿namespace Puck;
 
 class Group {
-	private static int _maxMembers = 40;
+	private const int _maxMembers = 40;
 
 	public readonly bool AcceptAnyRole;
 	public readonly bool HasMaxCount;
