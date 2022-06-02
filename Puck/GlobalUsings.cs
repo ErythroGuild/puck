@@ -10,8 +10,6 @@ global using System.Threading.Tasks;
 // D#+.
 global using DSharpPlus;
 global using DSharpPlus.Entities;
-global using DSharpPlus.EventArgs;
-global using DSharpPlus.Exceptions;
 
 // Microsoft.
 global using Microsoft.Extensions.Logging;
@@ -24,3 +22,8 @@ global using Puck.Utils;
 
 // Static usings.
 global using static Puck.Utils.Util;
+
+// Aliases.
+global using Command = DSharpPlus.Entities.DiscordApplicationCommand;
+global using CommandOption = DSharpPlus.Entities.DiscordApplicationCommandOption;
+global using CommandChoice = DSharpPlus.Entities.DiscordApplicationCommandOptionChoice;
