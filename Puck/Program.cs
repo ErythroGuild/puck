@@ -222,6 +222,7 @@ class Program {
 
 				// Initialize and collate all commands.
 				List<CommandHandler> handlers = new () {
+					new Help(Emojis),
 					new LFG(Emojis),
 				};
 				List<Command> commands = new ();
