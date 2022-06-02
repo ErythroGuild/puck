@@ -32,7 +32,7 @@ class Help : CommandHandler {
 		string helptext =
 			$"""
 			**Sign Up**
-			Pressing one of the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) signs you up for that role.
+			Press one of the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) to sign up for that role.
 			If you're already signed up for a different role, you'll be switched to the new role.
 			Press the {_emojis.Cancel} button to cancel any roles you've signed up for.
 
@@ -46,7 +46,7 @@ class Help : CommandHandler {
 
 			**Set Up Group**
 			Use the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) to pre-fill roles in your group.
-			Pressing the {_emojis.Cancel} button will clear *all* spots you've pre-filled.
+			Press the {_emojis.Cancel} button to clear *all* spots you've pre-filled.
 
 			**Configure**
 			**`/config`** customizes the bot for your server.
