@@ -232,9 +232,11 @@ class Program {
 				}
 
 				// Register commands in each connected guild.
+				List<Task> tasks = new ();
 				foreach (DiscordGuild guild in Client.Guilds.Values) {
-					await guild.BulkOverwriteApplicationCommandsAsync(commands);
+					tasks.Add(guild.BulkOverwriteApplicationCommandsAsync(commands));
 				}
+				await Task.WhenAll(tasks);
 
 				//Client.GuildCreated += (client, e) => {
 				//	_ = Task.Run(async () => {
