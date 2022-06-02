@@ -34,7 +34,7 @@ class Help : CommandHandler {
 			**Sign Up**
 			Press one of the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) to sign up for that role.
 			If you're already signed up for a different role, you'll be switched to the new role.
-			Press the {_emojis.Cancel} button to cancel any roles you've signed up for.
+			Press the {_emojis.Cancel} button to cancel any spots you've signed up for.
 
 			**List Group**
 			**`/lfg`** creates a new thread for your group.
@@ -45,7 +45,7 @@ class Help : CommandHandler {
 			`duration` is 5 minutes by default. The thread will be archived after this time.
 
 			**Set Up Group**
-			Use the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) to pre-fill roles in your group.
+			Use the signup buttons ({_emojis.Tank}/{_emojis.Heal}/{_emojis.Dps}) to pre-fill spots in your group.
 			Press the {_emojis.Cancel} button to clear *all* spots you've pre-filled.
 
 			**Configure**
