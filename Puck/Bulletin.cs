@@ -15,9 +15,7 @@ class Bulletin {
 			e.Handled = true;
 			Bulletin bulletin = _bulletins[id];
 			// Any registered messages can be responded to.
-			await e.Interaction.CreateResponseAsync(
-				InteractionResponseType.DeferredMessageUpdate
-			);
+			await e.Interaction.DeferComponentAsync();
 
 			// Queue up action.
 			bulletin._actions.Add(new Task(async () => {
@@ -53,7 +51,7 @@ class Bulletin {
 						bulletin.Group.CycleDps();
 						break;
 					case _idRefresh:
-						bulletin.AddTime();
+						bulletin.IncrementTime();
 						break;
 					case _idDelist:
 						await bulletin.Delist();
@@ -67,11 +65,10 @@ class Bulletin {
 	}
 
 	public readonly string Title;
-	public readonly string Description;
-	public readonly IMention? Mention;
+	public readonly string? Description;
+	public readonly DiscordRole? Mention;
 	public readonly Group Group;
 	public DiscordUser Owner => Group.Owner;
-	public DiscordMember? OwnerMember => Group.OwnerMember;
 	public DateTimeOffset Expiry { get; private set; }
 
 	private readonly Timer _timer;
@@ -96,8 +93,8 @@ class Bulletin {
 
 	public Bulletin(
 		string title,
-		string description,
-		IMention? mention,
+		string? description,
+		DiscordRole? mention,
 		TimeSpan duration,
 		Group group,
 		Task<DiscordThreadChannel> thread,
@@ -123,7 +120,7 @@ class Bulletin {
 		});
 	}
 
-	public void AddTime() {
+	public void IncrementTime() {
 		_timer.Stop();
 		Expiry += _durationAdd;
 		double msec =
@@ -151,39 +148,52 @@ class Bulletin {
 		}
 	}
 	private DiscordMessageBuilder GetMessage(bool isEnabled) {
+		// Select embed color.
 		DiscordColor color = Group.HasMaxCount
 			? _colorRed
 			: _colorLight;
-		string author = OwnerMember?.DisplayName
-			?? Owner.Username;
-		string avatar = OwnerMember?.GuildAvatarUrl
-			?? Owner.AvatarUrl;
+
+		// Format title.
 		string title = isEnabled
 			? Title
 			: Title.Strikethrough();
-		string content = $"{Description}\n"
-			+ "\n"
-			+ Group.PrintMemberList(_e);
-		string thumbnail = "https://imgur.com/x6TwpSQ";
-		IEnumerable<IMention> mention =
-			(isEnabled && Mention is not null)
-			? new List<IMention> { Mention }
-			: Mentions.None;
-		if (mention != Mentions.None)
-			content = $"**{Mention}** - {content}";
 
+		// Construct message body.
+		string byline = $"*Listed by: {Owner.Mention}*";
+		if (Mention is not null)
+			byline += $" - **{Mention.Mention}**";
+		string content = "";
+		if (Description is not null)
+			content += Description + "\n\n";
+		content += Group.PrintMemberList(_e);
+		if (isEnabled)
+			content += $"\n\n*expiring ~{Expiry.Timestamp(TimestampStyle.Relative)}*";
+
+		// Parse for potential thumbnail.
+		string? thumbnail = GetThumbnailUrl();
+
+		// Handle allowed mentions.
+		List<IMention> mentions = isEnabled
+			? new () { new UserMention(Owner) }
+			: new (Mentions.None);
+		if (isEnabled && Mention is not null)
+			mentions.Add(new RoleMention(Mention));
+
+		// Construct embed.
 		DiscordEmbedBuilder embed =
 			new DiscordEmbedBuilder()
 			.WithColor(color)
-			.WithAuthor(author, null, avatar)
 			.WithTitle(title)
-			.WithDescription(content)
-			.WithThumbnail(thumbnail);
+			.WithDescription(content);
+		if (thumbnail is not null)
+			embed = embed.WithThumbnail(thumbnail);
 
+		// Construct message.
 		DiscordMessageBuilder message =
 			new DiscordMessageBuilder()
+			.WithContent(byline) // workaround for disallowed embed pings
 			.WithEmbed(embed)
-			.WithAllowedMentions(mention);
+			.WithAllowedMentions(mentions);
 		if (isEnabled) {
 			message = message
 				.AddComponents(ButtonsSignup(_e))
@@ -191,6 +201,10 @@ class Bulletin {
 		}
 
 		return message;
+	}
+
+	private string? GetThumbnailUrl() {
+		return "https://i.imgur.com/x6TwpSQ.jpeg";
 	}
 
 	private static DiscordComponent[] ButtonsSignup(Emojis e) =>
@@ -226,13 +240,13 @@ class Bulletin {
 			new DiscordButtonComponent(
 				ButtonStyle.Secondary,
 				_idRefresh,
-				label: "Add time",
+				label: "Add 5 minutes",
 				emoji: new (e.Refresh)
 			),
 			new DiscordButtonComponent(
 				ButtonStyle.Success,
 				_idDelist,
-				label: "Delist",
+				label: "Delist group",
 				emoji: new (e.Delist)
 			),
 		};
