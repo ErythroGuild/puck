@@ -3,6 +3,10 @@
 namespace Puck.Commands;
 
 class LFG : CommandHandler {
+	public static string? GroupTypeName(string choice) =>
+		_groupNames.ContainsKey(choice)
+			? _groupNames[choice]
+			: null;
 	public static IReadOnlyList<string> DefaultGroupTypes =>
 		new List<string> {
 			Choice2_any,
@@ -15,7 +19,6 @@ class LFG : CommandHandler {
 	public override CommandTree Tree { get; init; }
 	
 	private readonly Emojis _emojis;
-
 	private readonly static ReadOnlyDictionary<string, string> _groupNames =
 		new (new ConcurrentDictionary<string, string> {
 			[Choice2_any] = "2-man (any)"  ,
@@ -63,8 +66,10 @@ class LFG : CommandHandler {
 
 	public LFG(IReadOnlyList<string> groupTypes, Emojis emojis) {
 		List<CommandChoice> groupChoices = new ();
-		foreach (string key in groupTypes)
-			groupChoices.Add(new (_groupNames[key], key));
+		foreach (string key in groupTypes) {
+			if (_groupNames.ContainsKey(key))
+				groupChoices.Add(new (GroupTypeName(key), key));
+		}
 
 		Tree = new (
 			new (new LeafArgs(
