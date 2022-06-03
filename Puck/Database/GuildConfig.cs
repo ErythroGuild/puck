@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
@@ -71,7 +71,13 @@ class GuildConfig {
 		return list;
 	}
 
-	public IList<string> GroupTypeList() {
+	public IReadOnlyDictionary<ulong, string> RoleGroupTypes() {
+		Dictionary<ulong, string> table = new ();
+		foreach (GuildRole role in AllowedRoles)
+			table.Add(ulong.Parse(role.RoleId), role.GroupTypeName);
+		return table;
+	}
+
 	public IReadOnlyList<string> GroupTypeList() {
 		List<string> list = new ();
 		foreach (GroupType groupType in AllowedGroupTypes)
@@ -86,12 +92,14 @@ class GuildRole {
 
 	[Required] public string GuildId { get; set; }
 	[Required] public string RoleId  { get; set; }
+	[Required] public string GroupTypeName { get; set; }
 
-	public GuildRole(ulong guildId, ulong roleId)
-		: this (guildId.ToString(), roleId.ToString()) { }
-	public GuildRole(string guildId, string roleId) {
+	public GuildRole(ulong guildId, ulong roleId, string groupTypeName)
+		: this (guildId.ToString(), roleId.ToString(), groupTypeName) { }
+	public GuildRole(string guildId, string roleId, string groupTypeName) {
 		GuildId = guildId;
 		RoleId = roleId;
+		GroupTypeName = groupTypeName;
 	}
 }
 
