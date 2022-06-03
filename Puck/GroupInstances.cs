@@ -22,7 +22,7 @@ static class GroupInstances {
 	};
 
 	private static readonly ReadOnlyDictionary<WowDungeon, string> _wowDungeonUrls =
-		new (new ConcurrentDictionary<WowDungeon, string>() {
+		new (new ConcurrentDictionary<WowDungeon, string> {
 			[WowDungeon.NW  ] = @"",
 			[WowDungeon.PF  ] = @"",
 			[WowDungeon.MoTS] = @"",
@@ -36,7 +36,7 @@ static class GroupInstances {
 			[WowDungeon.TV_SG ] = @"",
 		});
 	private static readonly ReadOnlyDictionary<WowRaid, string> _wowRaidUrls =
-		new (new ConcurrentDictionary<WowRaid, string>() {
+		new (new ConcurrentDictionary<WowRaid, string> {
 			[WowRaid.CN ] = @"",
 			[WowRaid.SoD] = @"",
 			[WowRaid.SFO] = @"",

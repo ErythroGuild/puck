@@ -19,7 +19,7 @@ static partial class Util {
 		return text;
 	}
 	private static readonly ReadOnlyDictionary<string, string> _escapeCodes =
-		new (new ConcurrentDictionary<string, string>() {
+		new (new ConcurrentDictionary<string, string> {
 			[@"\n"    ] = "\n"    ,
 			[@"\esc"  ] = "\x1B"  ,
 			[@":bbul:"] = "\u2022",

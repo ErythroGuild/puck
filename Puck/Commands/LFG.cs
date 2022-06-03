@@ -1,10 +1,10 @@
-﻿using static Puck.Commands.CommandHandler.CommandTree;
+using static Puck.Commands.CommandHandler.CommandTree;
 
 namespace Puck.Commands;
 
 class LFG : CommandHandler {
 	public override CommandTree Tree { get; init; }
-
+	
 	private readonly Emojis _emojis;
 	private const string
 		_commandLfg = "lfg";

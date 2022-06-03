@@ -1,4 +1,4 @@
-﻿using static Puck.Commands.CommandHandler.CommandTree;
+using static Puck.Commands.CommandHandler.CommandTree;
 
 namespace Puck.Commands;
 
@@ -25,6 +25,7 @@ class Help : CommandHandler {
 				Permissions.None
 			), HelpAsync)
 		);
+
 		_emojis = emojis;
 	}
 
