@@ -18,6 +18,9 @@ Puck/config/commit.txt
 # Bot data
 Puck/data/*.sqlite
 
+# Entity Framework migrations
+Puck/Migrations/*
+
 ###########################
 ##  Visual Studio files  ##
 ###########################
