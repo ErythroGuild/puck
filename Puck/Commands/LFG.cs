@@ -15,6 +15,28 @@ class LFG : CommandHandler {
 			Choice5_any,
 			ChoiceRaid ,
 		};
+	public static IReadOnlyList<string> AllGroupTypes =>
+		new List<string> {
+			Choice2_any,
+			Choice3_012,
+			Choice3_111,
+			Choice3_any,
+			Choice4_112,
+			Choice4_any,
+			Choice5_113,
+			Choice5_any,
+			Choice6_any,
+			Choice8_224,
+			ChoiceRaid ,
+		};
+	public static List<CommandChoice> GroupTypeChoices(IReadOnlyList<string> keys) {
+		List<CommandChoice> choices = new ();
+		foreach (string key in keys) {
+			if (_groupNames.ContainsKey(key))
+				choices.Add(new (GroupTypeName(key), key));
+		}
+		return choices;
+	}
 
 	public override CommandTree Tree { get; init; }
 	
@@ -41,16 +63,16 @@ class LFG : CommandHandler {
 		_optionMention = "mention",
 		_optionDuration = "duration",
 		_optionGroupType = "group-type";
-	private const string
-		_choice2m  = "2min" ,
-		_choice5m  = "5min" ,
-		_choice15m = "15min",
-		_choice30m = "30min",
-		_choice1h  = "1hrs" ,
-		_choice2h  = "2hrs" ,
-		_choice6h  = "6hrs" ,
-		_choice1d  = "1day" ,
-		_choice2d  = "2day" ;
+	public const string
+		Choice2m  = "2min" ,
+		Choice5m  = "5min" ,
+		Choice15m = "15min",
+		Choice30m = "30min",
+		Choice1h  = "1hrs" ,
+		Choice2h  = "2hrs" ,
+		Choice6h  = "6hrs" ,
+		Choice1d  = "1day" ,
+		Choice2d  = "2day" ;
 	public const string
 		Choice2_any = "2-any",
 		Choice3_012 = "3-012",
@@ -65,12 +87,6 @@ class LFG : CommandHandler {
 		ChoiceRaid  = "raid" ;
 
 	public LFG(IReadOnlyList<string> groupTypes, Emojis emojis) {
-		List<CommandChoice> groupChoices = new ();
-		foreach (string key in groupTypes) {
-			if (_groupNames.ContainsKey(key))
-				groupChoices.Add(new (GroupTypeName(key), key));
-		}
-
 		Tree = new (
 			new (new LeafArgs(
 				_commandLfg,
@@ -100,15 +116,15 @@ class LFG : CommandHandler {
 						ApplicationCommandOptionType.String,
 						required: false,
 						choices: new List<CommandChoice> {
-							new ("2 minutes" , _choice2m ),
-							new ("5 minutes" , _choice5m ),
-							new ("15 minutes", _choice15m),
-							new ("30 minutes", _choice30m),
-							new ("1 hour"    , _choice1h ),
-							new ("2 hours"   , _choice2h ),
-							new ("6 hours"   , _choice6h ),
-							new ("1 day"     , _choice1d ),
-							new ("2 days"    , _choice2d ),
+							new ("2 minutes" , Choice2m ),
+							new ("5 minutes" , Choice5m ),
+							new ("15 minutes", Choice15m),
+							new ("30 minutes", Choice30m),
+							new ("1 hour"    , Choice1h ),
+							new ("2 hours"   , Choice2h ),
+							new ("6 hours"   , Choice6h ),
+							new ("1 day"     , Choice1d ),
+							new ("2 days"    , Choice2d ),
 						}
 					),
 					new (
@@ -116,7 +132,7 @@ class LFG : CommandHandler {
 						"The type of group to list for.",
 						ApplicationCommandOptionType.String,
 						required: false,
-						choices: groupChoices
+						choices: GroupTypeChoices(groupTypes)
 					),
 				},
 				Permissions.UseApplicationCommands
@@ -205,15 +221,15 @@ class LFG : CommandHandler {
 
 	private static TimeSpan GetDuration(string option) =>
 		option switch {
-			_choice2m  => TimeSpan.FromMinutes(2),
-			_choice5m  => TimeSpan.FromMinutes(5),
-			_choice15m => TimeSpan.FromMinutes(15),
-			_choice30m => TimeSpan.FromMinutes(30),
-			_choice1h  => TimeSpan.FromHours(1),
-			_choice2h  => TimeSpan.FromHours(2),
-			_choice6h  => TimeSpan.FromHours(6),
-			_choice1d  => TimeSpan.FromDays(1),
-			_choice2d  => TimeSpan.FromDays(2),
+			Choice2m  => TimeSpan.FromMinutes(2),
+			Choice5m  => TimeSpan.FromMinutes(5),
+			Choice15m => TimeSpan.FromMinutes(15),
+			Choice30m => TimeSpan.FromMinutes(30),
+			Choice1h  => TimeSpan.FromHours(1),
+			Choice2h  => TimeSpan.FromHours(2),
+			Choice6h  => TimeSpan.FromHours(6),
+			Choice1d  => TimeSpan.FromDays(1),
+			Choice2d  => TimeSpan.FromDays(2),
 			_ => throw new ArgumentException("Unrecognized duration option."),
 		};
 	private static Group GetGroup(string option, DiscordUser owner) =>
