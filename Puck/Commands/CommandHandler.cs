@@ -1,4 +1,6 @@
-﻿using NodeHandler = System.Func<DSharpPlus.Entities.DiscordInteraction, System.Collections.Generic.Dictionary<string, object>, System.Threading.Tasks.Task>;
+﻿using static Puck.Commands.CommandHandler.CommandTree;
+
+using NodeHandler = System.Func<DSharpPlus.Entities.DiscordInteraction, System.Collections.Generic.Dictionary<string, object>, System.Threading.Tasks.Task>;
 
 namespace Puck.Commands;
 
@@ -19,15 +21,18 @@ abstract class CommandHandler {
 
 		public record class RootNode {
 			public readonly Command Command;
-			public readonly List<GroupNode>? Groups;
 			public readonly List<LeafNode>? Leaves;
+			public readonly List<GroupNode>? Groups;
 			public readonly NodeHandler? Handler;
 			public bool IsLeaf => Handler is not null;
 
+			public readonly IReadOnlyDictionary<string, NodeHandler>? LeafTable;
+			public readonly IReadOnlyDictionary<string, GroupNode>? GroupTable;
+
 			// Construct a root node that has subcommands.
-			public RootNode(GroupArgs args, List<GroupNode> groups, List<LeafNode> leaves) {
-				Groups = groups;
+			public RootNode(GroupArgs args, List<LeafNode> leaves, List<GroupNode> groups) {
 				Leaves = leaves;
+				Groups = groups;
 				Handler = null;
 
 				// Collate subcommands from child nodes.
@@ -44,11 +49,22 @@ abstract class CommandHandler {
 					type: ApplicationCommandType.SlashCommand,
 					defaultMemberPermissions: args.DefaultPermissions
 				);
+
+				// Collate subcommand handlers.
+				Dictionary<string, NodeHandler> leafTable = new ();
+				foreach (LeafNode leaf in leaves)
+					leafTable.Add(leaf.Command.Name, leaf.Handler);
+				LeafTable = leafTable;
+
+				Dictionary<string, GroupNode> groupTable = new ();
+				foreach (GroupNode group in groups)
+					groupTable.Add(group.Group.Name, group);
+				GroupTable = groupTable;
 			}
 			// Construct a root node that only has a single command.
 			public RootNode(LeafArgs args, NodeHandler handler) {
-				Groups = null;
 				Leaves = null;
+				Groups = null;
 				Handler = handler;
 				Command = new (
 					args.Name,
@@ -57,13 +73,18 @@ abstract class CommandHandler {
 					type: ApplicationCommandType.SlashCommand,
 					defaultMemberPermissions: args.DefaultPermissions
 				);
+
+				LeafTable = null;
+				GroupTable = null;
 			}
 		}
 		public record class GroupNode {
 			public readonly CommandOption Group;
 			public readonly List<LeafNode> Leaves;
 
-			public GroupNode(GroupArgs args, List<LeafNode> leaves) {
+			public IReadOnlyDictionary<string, NodeHandler> LeafTable;
+
+			public GroupNode(string name, string description, List<LeafNode> leaves) {
 				Leaves = leaves;
 
 				// Collate subcommands from child nodes.
@@ -72,11 +93,17 @@ abstract class CommandHandler {
 					command_list.Add(leaf.Command);
 
 				Group = new (
-					args.Name,
-					args.Description,
+					name,
+					description,
 					ApplicationCommandOptionType.SubCommandGroup,
 					options: command_list
 				);
+
+				// Collate subcommand handlers.
+				Dictionary<string, NodeHandler> leafTable = new ();
+				foreach (LeafNode leaf in leaves)
+					leafTable.Add(leaf.Command.Name, leaf.Handler);
+				LeafTable = leafTable;
 			}
 		}
 		public record class LeafNode {
@@ -100,19 +127,47 @@ abstract class CommandHandler {
 	public abstract CommandTree Tree { get; init; }
 	public Command Command => Tree.Command;
 
-	private CommandTree.RootNode Root => Tree.Root;
+	private RootNode Root => Tree.Root;
 	public Task HandleAsync(DiscordInteraction interaction) {
 		List<InteractionArg> arg_list = interaction.GetArgs();
 		Dictionary<string, object> args = new ();
 
-		if (Root.IsLeaf) {
+		void AddArgs(List<InteractionArg> arg_list) {
 			foreach (InteractionArg arg in arg_list)
 				args.Add(arg.Name, arg.Value);
-			return Root.Handler!.Invoke(interaction, args);
 		}
 
-		string subcommand = arg_list[0].Name;
+		// Invoke from root node.
+		if (Root.IsLeaf) {
+			AddArgs(arg_list);
+			return Root.Handler!
+				.Invoke(interaction, args);
+		}
 
-		throw new NotImplementedException();
+		// Invoke leaf child node.
+		string subcommand = arg_list[0].Name;
+		if (Root.LeafTable!.ContainsKey(subcommand)) {
+			arg_list = arg_list[0].GetArgs();
+			AddArgs(arg_list);
+			return Root.LeafTable![subcommand]
+				.Invoke(interaction, args);
+		}
+
+		// Invoke from group child node.
+		if (Root.GroupTable!.ContainsKey(subcommand)) {
+			GroupNode group = Root.GroupTable![subcommand];
+			arg_list = arg_list[0].GetArgs();
+			subcommand = arg_list[0].Name;
+
+			if (group.LeafTable.ContainsKey(subcommand)) {
+				arg_list = arg_list[0].GetArgs();
+				AddArgs(arg_list);
+				return group.LeafTable[subcommand]
+					.Invoke(interaction, args);
+			}
+		}
+
+		// This should never happen.
+		throw new ArgumentException("Unknown slash command.", nameof(interaction));
 	}
 }
