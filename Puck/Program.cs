@@ -234,22 +234,37 @@ class Program {
 				};
 
 				// Initialize and collate all commands.
+				// LFG is custom for each guild, so we need to
+				// create a generic handler separately.
 				List<CommandHandler> handlers = new () {
 					new Help(Emojis),
-					new LFG(Emojis),
 				};
 				List<Command> commands = new ();
 				foreach (CommandHandler handler in handlers) {
 					Commands.TryAdd(handler.Command.Name, handler);
 					commands.Add(handler.Command);
 				}
+				LFG lfg_generic = new (new List<string>(), Emojis);
+				Commands.TryAdd(lfg_generic.Command.Name, lfg_generic);
 
 				// Register commands in each connected guild.
+				// A customized version of the LFG command is used.
 				List<Task> tasks = new ();
+				_stopwatchRegister.Start();
 				foreach (DiscordGuild guild in Client.Guilds.Values) {
-					tasks.Add(guild.BulkOverwriteApplicationCommandsAsync(commands));
+					using GuildConfigDatabase database = new ();
+					GuildConfig? config = database.GetConfig(guild.Id);
+					IReadOnlyList<string> keys = config is null
+						? LFG.DefaultGroupTypes
+						: config.GroupTypeList();
+					List<Command> commands_guild = new (commands) {
+						new LFG(keys, Emojis).Command
+					};
+					tasks.Add(guild.BulkOverwriteApplicationCommandsAsync(commands_guild));
 				}
 				await Task.WhenAll(tasks);
+				Log.Information("  Registered commands in {Count} guilds.", tasks.Count);
+				_stopwatchRegister.LogMsecDebug("    Took {RegisterTime} msec.");
 
 				//Client.GuildCreated += (client, e) => {
 				//	_ = Task.Run(async () => {
