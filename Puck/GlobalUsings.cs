@@ -18,6 +18,7 @@ global using Microsoft.Extensions.Logging;
 global using Serilog;
 
 // Project namespaces.
+global using Puck.Database;
 global using Puck.Utils;
 
 // Static usings.
