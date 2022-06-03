@@ -211,7 +211,7 @@ class Program {
 					GuildConfig? config =
 						database.GetConfig(guild.Id);
 					if (config is null) {
-						config = new (guild.Id, guild.Name);
+						config = new (guild);
 						database.Configs.Add(config);
 						database.SaveChanges();
 					}

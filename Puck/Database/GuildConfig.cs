@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
@@ -50,6 +50,8 @@ class GuildConfig {
 	[ForeignKey("GuildId")] public virtual ICollection<GuildRole> AllowedRoles      { get; set; }
 	[ForeignKey("GuildId")] public virtual ICollection<GroupType> AllowedGroupTypes { get; set; }
 
+	public GuildConfig(DiscordGuild guild)
+		: this (guild.Id, guild.Name) { }
 	public GuildConfig(ulong guildId, string guildName)
 		: this (guildId.ToString(), guildName) { }
 	public GuildConfig(string guildId, string guildName) {
