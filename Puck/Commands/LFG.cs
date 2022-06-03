@@ -1,11 +1,35 @@
-using static Puck.Commands.CommandHandler.CommandTree;
+﻿using static Puck.Commands.CommandHandler.CommandTree;
 
 namespace Puck.Commands;
 
 class LFG : CommandHandler {
+	public static IList<string> DefaultGroupTypes =>
+		new List<string> {
+			Choice2_any,
+			Choice3_any,
+			Choice5_113,
+			Choice5_any,
+			ChoiceRaid ,
+		};
+
 	public override CommandTree Tree { get; init; }
 	
 	private readonly Emojis _emojis;
+
+	private readonly static ReadOnlyDictionary<string, string> _groupNames =
+		new (new ConcurrentDictionary<string, string> {
+			[Choice2_any] = "2-man (any)"  ,
+			[Choice3_012] = "3-man (0-1-2)",
+			[Choice3_111] = "3-man (1-1-1)",
+			[Choice3_any] = "3-man (any)"  ,
+			[Choice4_112] = "4-man (1-1-2)",
+			[Choice4_any] = "4-man (any)"  ,
+			[Choice5_113] = "5-man (1-1-3)",
+			[Choice5_any] = "5-man (any)"  ,
+			[Choice6_any] = "6-man (any)"  ,
+			[Choice8_224] = "8-man (2-2-4)",
+			[ChoiceRaid ] = "raid group"   ,
+		});
 	private const string
 		_commandLfg = "lfg";
 	private const string
@@ -24,20 +48,24 @@ class LFG : CommandHandler {
 		_choice6h  = "6hrs" ,
 		_choice1d  = "1day" ,
 		_choice2d  = "2day" ;
-	private const string
-		_choice2_any = "2-any",
-		_choice3_012 = "3-012",
-		_choice3_111 = "3-111",
-		_choice3_any = "3-any",
-		_choice4_112 = "4-112",
-		_choice4_any = "4-any",
-		_choice5_113 = "5-113",
-		_choice5_any = "5-any",
-		_choice6_any = "6-any",
-		_choice8_224 = "8-224",
-		_choiceRaid  = "raid" ;
+	public const string
+		Choice2_any = "2-any",
+		Choice3_012 = "3-012",
+		Choice3_111 = "3-111",
+		Choice3_any = "3-any",
+		Choice4_112 = "4-112",
+		Choice4_any = "4-any",
+		Choice5_113 = "5-113",
+		Choice5_any = "5-any",
+		Choice6_any = "6-any",
+		Choice8_224 = "8-224",
+		ChoiceRaid  = "raid" ;
 
-	public LFG(Emojis emojis) {
+	public LFG(IList<string> groupTypes, Emojis emojis) {
+		List<CommandChoice> groupChoices = new ();
+		foreach (string key in groupTypes)
+			groupChoices.Add(new (_groupNames[key], key));
+
 		Tree = new (
 			new (new LeafArgs(
 				_commandLfg,
@@ -83,24 +111,13 @@ class LFG : CommandHandler {
 						"The type of group to list for.",
 						ApplicationCommandOptionType.String,
 						required: false,
-						choices: new List<CommandChoice> {
-							new ("2-man (any)"  , _choice2_any),
-							new ("3-man (0-1-2)", _choice3_012),
-							new ("3-man (1-1-1)", _choice3_111),
-							new ("3-man (any)"  , _choice3_any),
-							new ("4-man (1-1-2)", _choice4_112),
-							new ("4-man (any)"  , _choice4_any),
-							new ("5-man (1-1-3)", _choice5_113),
-							new ("5-man (any)"  , _choice5_any),
-							new ("6-man (any)"  , _choice6_any),
-							new ("8-man (2-2-4)", _choice8_224),
-							new ("raid group"   , _choiceRaid ),
-						}
+						choices: groupChoices
 					),
 				},
 				Permissions.UseApplicationCommands
 			), LfgAsync )
 		);
+
 		_emojis = emojis;
 	}
 
@@ -170,17 +187,17 @@ class LFG : CommandHandler {
 		};
 	private static Group GetGroup(string option, DiscordUser owner) =>
 		option switch {
-			_choice3_012 => Group.WithRoles(owner, 0, 1, 2),
-			_choice3_111 => Group.WithRoles(owner, 1, 1, 1),
-			_choice4_112 => Group.WithRoles(owner, 1, 1, 2),
-			_choice5_113 => Group.WithRoles(owner, 1, 1, 3),
-			_choice8_224 => Group.WithRoles(owner, 2, 2, 4),
-			_choice2_any => Group.WithAnyRole(owner, 2),
-			_choice3_any => Group.WithAnyRole(owner, 3),
-			_choice4_any => Group.WithAnyRole(owner, 4),
-			_choice5_any => Group.WithAnyRole(owner, 5),
-			_choice6_any => Group.WithAnyRole(owner, 6),
-			_choiceRaid  => Group.WithAnyRole(owner),
+			Choice3_012 => Group.WithRoles(owner, 0, 1, 2),
+			Choice3_111 => Group.WithRoles(owner, 1, 1, 1),
+			Choice4_112 => Group.WithRoles(owner, 1, 1, 2),
+			Choice5_113 => Group.WithRoles(owner, 1, 1, 3),
+			Choice8_224 => Group.WithRoles(owner, 2, 2, 4),
+			Choice2_any => Group.WithAnyRole(owner, 2),
+			Choice3_any => Group.WithAnyRole(owner, 3),
+			Choice4_any => Group.WithAnyRole(owner, 4),
+			Choice5_any => Group.WithAnyRole(owner, 5),
+			Choice6_any => Group.WithAnyRole(owner, 6),
+			ChoiceRaid  => Group.WithAnyRole(owner),
 			_ => throw new ArgumentException("Unrecognized group type option."),
 		};
 }
