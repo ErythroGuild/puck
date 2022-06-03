@@ -61,9 +61,8 @@ class Help : CommandHandler {
 			Press the {_emojis.Cancel} button to clear *all* spots you've pre-filled.
 
 			**Configure**
-			**`/config`** customizes the bot for your server.
 			*Note: use Server Settings {_arrr} Integrations to set up allowed channels.*
-			`/config help` displays a guide with further details.
+			`/config help` displays a guide for configuration.
 			""";
 		await interaction.EditOriginalResponseAsync(
 			new DiscordWebhookBuilder()
@@ -83,16 +82,7 @@ class Help : CommandHandler {
 			{"`mention` only works with these roles:"};
 		foreach (ulong roleId in config.RoleList()) {
 			if (roleTable.ContainsKey(roleId))
-				roles.Add($"{_emsp}{_wbul}{_ensp}{roleTable[roleId].Mention}");
-		}
-
-		// Special case if no roles are enabled.
-		if (roles.Count == 0) {
-			roles = new () {
-				"`mention` is *not enabled* for any roles.",
-				$"{_emsp}{_ensp}To change this setting for this server, use `/config mention`.",
-				$"{_emsp}{_ensp}(You will need \"Manage Server\" permissions.)",
-			};
+				roles.Add($"{_emsp}{_ensp}{_wbul}{_ensp}{roleTable[roleId].Mention}");
 		}
 
 		// Cap list to a reasonable number (+1 for the first line).
@@ -102,7 +92,17 @@ class Help : CommandHandler {
 			// a minimum number of elided lines.
 			// (This prevents "orphaning" a single line.)
 			roles = roles.GetRange(0, 1 + _capRoles - 2);
-			roles.Add($"{_emsp}{_ensp}{_ensp}{_ellp}{_emsp}*(see `/config mention list` for full list)*");
+			roles.Add($"{_emsp}{_ensp}{_ensp}{_ensp}{_ellp}{_emsp}*(see `/config mention list` for full list)*");
+		}
+
+		// Special case if no roles are enabled.
+		// (1 is for the first line.)
+		if (roles.Count == 1) {
+			roles = new () {
+				"`mention` is *not enabled* for any roles.",
+				$"{_emsp}{_ensp}To change this setting for this server, use `/config mention`.",
+				$"{_emsp}{_ensp}(You will need \"Manage Server\" permissions.)",
+			};
 		}
 
 		return roles.ToLines();
@@ -119,7 +119,7 @@ class Help : CommandHandler {
 		List<string> roles = new ();
 		string? type_default = LFG.GroupTypeName(config.DefaultGroupType);
 		if (type_default is not null)
-			roles.Add($"{_emsp}{_wbul}{_ensp}`{type_default,-13}` if no `mention` specified");
+			roles.Add($"{_emsp}{_ensp}{_wbul}{_ensp}`{type_default,-13}` if no `mention` specified");
 
 		// Compile all mentions.
 		IReadOnlyDictionary<ulong, string> typeTable =
@@ -129,7 +129,7 @@ class Help : CommandHandler {
 				string? type = LFG.GroupTypeName(typeTable[roleId]);
 				DiscordRole role = roleTable[roleId];
 				if (type is not null)
-					roles.Add($"{_emsp}{_wbul}{_ensp}`{type,-13}` for {role.Mention}");
+					roles.Add($"{_emsp}{_ensp}{_wbul}{_ensp}`{type,-13}` for {role.Mention}");
 			}
 		}
 
@@ -140,7 +140,7 @@ class Help : CommandHandler {
 			// a minimum number of elided lines.
 			// (This prevents "orphaning" a single line.)
 			roles = roles.GetRange(0, 1 + _capRoles - 2);
-			roles.Add($"{_emsp}{_ensp}{_ensp}{_ellp}{_emsp}*(see `/config mention list` for full list)*");
+			roles.Add($"{_emsp}{_ensp}{_ensp}{_ensp}{_ellp}{_emsp}*(see `/config mention list` for full list)*");
 		}
 
 		return roles.ToLines();
@@ -154,17 +154,17 @@ class Help : CommandHandler {
 
 		return duration switch {
 			TimeSpan t when t < TimeSpan.FromHours(1) =>
-				duration.ToString("m 'min'"),
+				duration.ToString("m' min'"),
 			TimeSpan t when t < TimeSpan.FromHours(4) =>
-				duration.ToString("h 'hrs' m 'min'"),
+				duration.ToString("h' hrs 'm' min'"),
 			TimeSpan t when t < TimeSpan.FromDays(1) =>
-				duration.ToString("h 'hrs'"),
+				duration.ToString("h' hrs'"),
 			TimeSpan t when t < TimeSpan.FromDays(2) =>
-				duration.ToString("d 'day' h 'hrs'"),
+				duration.ToString("d' day 'h' hrs'"),
 			TimeSpan t when t < TimeSpan.FromDays(4) =>
-				duration.ToString("d 'days' h 'hrs'"),
+				duration.ToString("d' days 'h' hrs'"),
 			_ =>
-				duration.ToString("d 'days'"),
+				duration.ToString("d' days'"),
 		};
 	}
 }
