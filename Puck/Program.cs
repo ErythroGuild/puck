@@ -204,6 +204,19 @@ class Program {
 				Log.Information("  Downloaded guild data from Discord.");
 				_stopwatchDownload.LogMsecDebug("    Took {DownloadTime} msec.");
 
+				// Ensure all guilds at least have default database
+				// entries.
+				foreach (DiscordGuild guild in Client.Guilds.Values) {
+					using GuildConfigDatabase database = new ();
+					GuildConfig? config =
+						database.GetConfig(guild.Id);
+					if (config is null) {
+						config = new (guild.Id, guild.Name);
+						database.Configs.Add(config);
+						database.SaveChanges();
+					}
+				}
+
 				// Initialize emojis.
 				Emojis = new Emojis(Client);
 				Log.Debug("  Initialized custom emojis.");
