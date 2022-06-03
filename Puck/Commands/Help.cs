@@ -76,9 +76,8 @@ class Help : CommandHandler {
 		IReadOnlyDictionary<ulong, DiscordRole> roleTable =
 			guild.Roles;
 
-		using GuildConfigDatabase database = new ();
-		GuildConfig config = database.GetConfig(guild.Id)
-			?? new (guild);
+		GuildConfig config =
+			GuildConfigDatabase.GetConfigOrDefault(guild);
 
 		List<string> roles = new ()
 			{"`mention` only works with these roles:"};
@@ -113,9 +112,8 @@ class Help : CommandHandler {
 		IReadOnlyDictionary<ulong, DiscordRole> roleTable =
 			guild.Roles;
 
-		using GuildConfigDatabase database = new ();
-		GuildConfig config = database.GetConfig(guild.Id)
-			?? new (guild);
+		GuildConfig config =
+			GuildConfigDatabase.GetConfigOrDefault(guild);
 
 		// Show default group type first.
 		List<string> roles = new ();
@@ -149,9 +147,8 @@ class Help : CommandHandler {
 	}
 
 	private static string GetDefaultDuration(DiscordGuild guild) {
-		using GuildConfigDatabase database = new ();
-		GuildConfig config = database.GetConfig(guild.Id)
-			?? new (guild);
+		GuildConfig config =
+			GuildConfigDatabase.GetConfigOrDefault(guild);
 
 		TimeSpan duration = config.DefaultDuration();
 

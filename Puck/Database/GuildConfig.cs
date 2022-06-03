@@ -24,6 +24,13 @@ class GuildConfigDatabase : DbContext {
 			.HasIndex(t => t.GuildId);
 	}
 
+	public static GuildConfig GetConfigOrDefault(DiscordGuild guild) {
+		using GuildConfigDatabase database = new ();
+		GuildConfig config = database.GetConfig(guild.Id)
+			?? new (guild.Id, guild.Name);
+		return config;
+	}
+
 	public GuildConfig? GetConfig(ulong guildId) {
 		IEnumerable<GuildConfig> config_list =
 			from _config in Configs

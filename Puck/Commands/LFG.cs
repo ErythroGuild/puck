@@ -153,19 +153,15 @@ class LFG : CommandHandler {
 
 		// Set default duration if not specified.
 		if (duration is null) {
-			using GuildConfigDatabase database = new ();
-			GuildConfig? config = database.GetConfig(guild.Id);
-			if (config is null)
-				config = new (guild.Id, guild.Name);
+			GuildConfig config =
+				GuildConfigDatabase.GetConfigOrDefault(guild);
 			duration = config.DefaultDuration();
 		}
 
 		// Set default group type if not specified.
 		if (group is null) {
-			using GuildConfigDatabase database = new ();
-			GuildConfig? config = database.GetConfig(guild.Id);
-			if (config is null)
-				config = new (guild.Id, guild.Name);
+			GuildConfig config =
+				GuildConfigDatabase.GetConfigOrDefault(guild);
 
 			string? group_type = null;
 			if (mention is not null) {
