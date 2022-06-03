@@ -1,7 +1,7 @@
 ﻿namespace Puck;
 
 class Group {
-	private const int _maxMembers = 40;
+	public const int MaxMembers = 40;
 
 	public readonly bool AcceptAnyRole;
 	public readonly bool HasMaxCount;
@@ -60,7 +60,7 @@ class Group {
 		bool canAdd = AcceptAnyRole
 			? Members < max
 			: members.Count < max;
-		if (!HasMaxCount && (Members < _maxMembers))
+		if (!HasMaxCount && (Members < MaxMembers))
 			canAdd = true;
 
 		if (canAdd) {
