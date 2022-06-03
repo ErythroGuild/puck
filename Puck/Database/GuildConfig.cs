@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
@@ -64,7 +64,7 @@ class GuildConfig {
 	public TimeSpan DefaultDuration() =>
 		TimeSpan.FromMilliseconds(DefaultDurationMsec);
 
-	public IList<ulong> RoleList() {
+	public IReadOnlyList<ulong> RoleList() {
 		List<ulong> list = new ();
 		foreach (GuildRole role in AllowedRoles)
 			list.Add(ulong.Parse(role.RoleId));
@@ -72,6 +72,7 @@ class GuildConfig {
 	}
 
 	public IList<string> GroupTypeList() {
+	public IReadOnlyList<string> GroupTypeList() {
 		List<string> list = new ();
 		foreach (GroupType groupType in AllowedGroupTypes)
 			list.Add(groupType.GroupTypeName);

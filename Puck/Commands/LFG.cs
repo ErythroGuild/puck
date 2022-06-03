@@ -3,7 +3,7 @@
 namespace Puck.Commands;
 
 class LFG : CommandHandler {
-	public static IList<string> DefaultGroupTypes =>
+	public static IReadOnlyList<string> DefaultGroupTypes =>
 		new List<string> {
 			Choice2_any,
 			Choice3_any,
@@ -61,7 +61,7 @@ class LFG : CommandHandler {
 		Choice8_224 = "8-224",
 		ChoiceRaid  = "raid" ;
 
-	public LFG(IList<string> groupTypes, Emojis emojis) {
+	public LFG(IReadOnlyList<string> groupTypes, Emojis emojis) {
 		List<CommandChoice> groupChoices = new ();
 		foreach (string key in groupTypes)
 			groupChoices.Add(new (_groupNames[key], key));
