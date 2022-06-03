@@ -106,9 +106,8 @@ class LFG : CommandHandler {
 
 	private async Task LfgAsync(DiscordInteraction interaction, Dictionary<string, object> args) {
 		await interaction.CreateResponseAsync(
-			InteractionResponseType.ChannelMessageWithSource,
+			InteractionResponseType.DeferredChannelMessageWithSource,
 			new DiscordInteractionResponseBuilder()
-				.WithContent("Creating LFG listing.")
 				.AsEphemeral(true)
 		);
 
@@ -146,8 +145,14 @@ class LFG : CommandHandler {
 				ChannelType.PublicThread,
 				"New LFG listing."
 			);
-
 		thread_promise.SetResult(thread);
+
+		string response =
+			$"{_emojis.Delist} Created LFG listing:";
+		response += $" {thread.Mention}";
+		await interaction.EditOriginalResponseAsync(
+			new DiscordWebhookBuilder().WithContent(response)
+		);
 	}
 
 	private static TimeSpan GetDuration(string option) =>
