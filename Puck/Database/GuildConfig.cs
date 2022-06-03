@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
@@ -44,6 +44,7 @@ class GuildConfig {
 	[Key] public string GuildId { get; set; }
 
 	[Required] public string GuildName           { get; set; }
+	[Required] public string DefaultGroupType    { get; set; }
 	[Required] public double DefaultDurationMsec { get; set; }
 
 	[ForeignKey("GuildId")] public virtual ICollection<GuildRole> AllowedRoles      { get; set; }
@@ -55,6 +56,7 @@ class GuildConfig {
 		GuildId = guildId;
 		GuildName = guildName;
 
+		DefaultGroupType = "5-113";
 		DefaultDurationMsec = _defaultDuration.TotalMilliseconds;
 
 		AllowedRoles = new HashSet<GuildRole>();
