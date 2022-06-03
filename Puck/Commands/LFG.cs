@@ -141,25 +141,54 @@ class LFG : CommandHandler {
 		DiscordRole? mention = HasArg(args, _optionMention)
 			? interaction.GetTargetRole()
 			: null;
-		TimeSpan duration = HasArg(args, _optionDuration)
+		TimeSpan? duration = HasArg(args, _optionDuration)
 			? GetDuration(GetArg<string>(args, _optionDuration))
-			: TimeSpan.FromMinutes(5);
+			: null;
 		DiscordUser owner = interaction.User;
-		Group group = HasArg(args, _optionGroupType)
+		Group? group = HasArg(args, _optionGroupType)
 			? GetGroup(GetArg<string>(args, _optionGroupType), owner)
-			: Group.WithRoles(owner, 1, 1, 3);
+			: null;
 
+		DiscordGuild guild = interaction.Guild;
+
+		// Set default duration if not specified.
+		if (duration is null) {
+			using GuildConfigDatabase database = new ();
+			GuildConfig? config = database.GetConfig(guild.Id);
+			if (config is null)
+				config = new (guild.Id, guild.Name);
+			duration = config.DefaultDuration();
+		}
+
+		// Set default group type if not specified.
+		if (group is null) {
+			using GuildConfigDatabase database = new ();
+			GuildConfig? config = database.GetConfig(guild.Id);
+			if (config is null)
+				config = new (guild.Id, guild.Name);
+
+			string? group_type = null;
+			if (mention is not null) {
+				IReadOnlyDictionary<ulong, string> group_types =
+					config.RoleGroupTypes();
+				if (group_types.ContainsKey(mention.Id))
+					group_type = group_types[mention.Id];
+			}
+			group_type ??= config.DefaultGroupType;
+			group = GetGroup(group_type, owner);
+		}
+
+		// Create and initialize bulletin.
 		TaskCompletionSource<DiscordThreadChannel> thread_promise = new ();
 		_ = new Bulletin(
 			title,
 			description,
 			mention,
-			duration,
+			duration.Value,
 			group,
 			thread_promise.Task,
 			_emojis
 		);
-
 		DiscordThreadChannel thread = await
 			interaction.Channel.CreateThreadAsync(
 				title,
@@ -169,6 +198,7 @@ class LFG : CommandHandler {
 			);
 		thread_promise.SetResult(thread);
 
+		// Update original command response.
 		string response =
 			$"{_emojis.Delist} Created LFG listing:";
 		response += $" {thread.Mention}";
