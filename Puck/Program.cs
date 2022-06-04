@@ -221,6 +221,10 @@ class Program {
 				Emojis = new Emojis(Client);
 				Log.Debug("  Initialized custom emojis.");
 
+				// Initialize custom components.
+				Components.Pages.Init();
+				Components.Selection.Init();
+
 				// Attach command handler before registering commands.
 				Client.InteractionCreated += (client, e) => {
 					_ = Task.Run(async () => {
