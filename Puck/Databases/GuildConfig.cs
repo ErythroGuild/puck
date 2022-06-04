@@ -4,7 +4,7 @@ using System.Linq;
 
 using Microsoft.EntityFrameworkCore;
 
-namespace Puck.Database;
+namespace Puck.Databases;
 
 class GuildConfigDatabase : DbContext {
 	public DbSet<GuildConfig> Configs { get; set; } = null!;
