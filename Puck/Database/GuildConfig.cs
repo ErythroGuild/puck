@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 
@@ -34,6 +34,8 @@ class GuildConfigDatabase : DbContext {
 	public GuildConfig? GetConfig(ulong guildId) {
 		IEnumerable<GuildConfig> config_list =
 			from _config in Configs
+				.Include(c => c.AllowedGroupTypes)
+				.Include(c => c.AllowedRoles)
 			where _config.GuildId == guildId.ToString()
 			select _config;
 		return config_list.Any()
