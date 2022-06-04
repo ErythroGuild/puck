@@ -37,6 +37,20 @@ class LFG : CommandHandler {
 		}
 		return choices;
 	}
+	
+	public static TimeSpan GetDuration(string option) =>
+		option switch {
+			Choice2m  => TimeSpan.FromMinutes(2),
+			Choice5m  => TimeSpan.FromMinutes(5),
+			Choice15m => TimeSpan.FromMinutes(15),
+			Choice30m => TimeSpan.FromMinutes(30),
+			Choice1h  => TimeSpan.FromHours(1),
+			Choice2h  => TimeSpan.FromHours(2),
+			Choice6h  => TimeSpan.FromHours(6),
+			Choice1d  => TimeSpan.FromDays(1),
+			Choice2d  => TimeSpan.FromDays(2),
+			_ => throw new ArgumentException("Unrecognized duration option."),
+		};
 
 	public override CommandTree Tree { get; init; }
 	
@@ -215,23 +229,11 @@ class LFG : CommandHandler {
 			$"{_emojis.Delist} Created LFG listing:";
 		response += $" {thread.Mention}";
 		await interaction.EditOriginalResponseAsync(
-			new DiscordWebhookBuilder().WithContent(response)
+			new DiscordWebhookBuilder()
+				.WithContent(response)
 		);
 	}
 
-	private static TimeSpan GetDuration(string option) =>
-		option switch {
-			Choice2m  => TimeSpan.FromMinutes(2),
-			Choice5m  => TimeSpan.FromMinutes(5),
-			Choice15m => TimeSpan.FromMinutes(15),
-			Choice30m => TimeSpan.FromMinutes(30),
-			Choice1h  => TimeSpan.FromHours(1),
-			Choice2h  => TimeSpan.FromHours(2),
-			Choice6h  => TimeSpan.FromHours(6),
-			Choice1d  => TimeSpan.FromDays(1),
-			Choice2d  => TimeSpan.FromDays(2),
-			_ => throw new ArgumentException("Unrecognized duration option."),
-		};
 	private static Group GetGroup(string option, DiscordUser owner) =>
 		option switch {
 			Choice3_012 => Group.WithRoles(owner, 0, 1, 2),
