@@ -200,6 +200,15 @@ class LFG : CommandHandler {
 			group = GetGroup(group_type, owner);
 		}
 
+		// Only set the mention if it's explicitly allowed.
+		if (mention is not null) {
+			GuildConfig config =
+				GuildConfigDatabase.GetConfigOrDefault(guild);
+			List<ulong> roles_allowed = new (config.RoleList());
+			if (!roles_allowed.Contains(mention.Id))
+				mention = null;
+		}
+
 		// Create and initialize bulletin.
 		TaskCompletionSource<DiscordThreadChannel> thread_promise = new ();
 		_ = new Bulletin(
