@@ -271,41 +271,46 @@ class Program {
 				Log.Information("  Registered commands in {Count} guild(s).", tasks.Count);
 				_stopwatchRegister.LogMsecDebug("    Took {RegisterTime} msec.");
 
-				//Client.GuildCreated += (client, e) => {
-				//	_ = Task.Run(async () => {
-				//		Log.Information("New guild added! - {GuildName}", e.Guild.Name);
+				Client.GuildCreated += (client, e) => {
+					_ = Task.Run(() => {
+						Log.Information("Added to guild: {GuildName}", e.Guild.Name);
 
-				//		settings.TryAdd(e.Guild.Id, new Settings(null));
-				//		await ExportSettings(Client);
+						using GuildConfigDatabase database = new ();
+						GuildConfig config =
+							GuildConfigDatabase.DefaultConfig(e.Guild);
+						database.Add(config);
+						database.SaveChanges();
+					});
+					return Task.CompletedTask;
+				};
 
-				//		await e.Guild.Owner.SendMessageAsync(
-				//			$""""
-				//			Hello!
-				//			I've just been added to your server, {e.Guild.Name.Bold()} :wave:
-				//			""""
-				//		);
-				//		Log.Debug("  Sent config guide to server owner.");
-				//	});
-				//	return Task.CompletedTask;
-				//};
+				Client.GuildDeleted += (client, e) => {
+					_ = Task.Run(() => {
+						Log.Information("Removed from guild: {GuildName}", e.Guild.Name);
 
-				//Client.GuildDeleted += (client, e) => {
-				//	_ = Task.Run(async () => {
-				//		Log.Information("Removed from guild - {GuildName}", e.Guild.Name);
-				//		settings.Remove(e.Guild.Id);
-				//		await ExportSettings(Client, false);
-				//		Log.Debug("  Removed guild settings.");
-				//	});
-				//	return Task.CompletedTask;
-				//};
+						using GuildConfigDatabase database = new ();
+						GuildConfig? config =
+							database.GetConfig(e.Guild.Id);
+						if (config is not null)
+							database.Remove(config);
+						database.SaveChanges();
+					});
+					return Task.CompletedTask;
+				};
 			});
 			return Task.CompletedTask;
 		};
 
 		Client.GuildUpdated += (client, e) => {
-			_ = Task.Run(async () => {
+			_ = Task.Run(() => {
 				if (e.GuildBefore.Name  == e.GuildAfter.Name)
 					return;
+
+				Log.Debug(
+					"Guild name updated: {NameBefore} -> {NameAfter}",
+					e.GuildBefore.Name,
+					e.GuildAfter.Name
+				);
 
 				using GuildConfigDatabase database = new ();
 				GuildConfig? config = database.GetConfig(e.GuildBefore.Id);
@@ -315,12 +320,6 @@ class Program {
 				}
 				config.GuildName = e.GuildAfter.Name;
 				database.SaveChanges();
-
-				Log.Information(
-					"Guild name updated: {NameBefore} -> {NameAfter}",
-					e.GuildBefore.Name,
-					e.GuildAfter.Name
-				);
 			});
 			return Task.CompletedTask;
 		};
