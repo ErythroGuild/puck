@@ -302,6 +302,29 @@ class Program {
 			return Task.CompletedTask;
 		};
 
+		Client.GuildUpdated += (client, e) => {
+			_ = Task.Run(async () => {
+				if (e.GuildBefore.Name  == e.GuildAfter.Name)
+					return;
+
+				using GuildConfigDatabase database = new ();
+				GuildConfig? config = database.GetConfig(e.GuildBefore.Id);
+				if (config is null) {
+					config = GuildConfigDatabase.DefaultConfig(e.GuildAfter);
+					database.SaveChanges();
+				}
+				config.GuildName = e.GuildAfter.Name;
+				database.SaveChanges();
+
+				Log.Information(
+					"Guild name updated: {NameBefore} -> {NameAfter}",
+					e.GuildBefore.Name,
+					e.GuildAfter.Name
+				);
+			});
+			return Task.CompletedTask;
+		};
+
 		// Stop configuration timer.
 		Log.Debug("  Configured Discord client.");
 		_stopwatchConfig.LogMsecDebug("    Took {ConfigTime} msec.");
