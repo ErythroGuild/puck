@@ -157,11 +157,7 @@ class LFG : CommandHandler {
 	}
 
 	private async Task LfgAsync(DiscordInteraction interaction, Dictionary<string, object> args) {
-		await interaction.CreateResponseAsync(
-			InteractionResponseType.DeferredChannelMessageWithSource,
-			new DiscordInteractionResponseBuilder()
-				.AsEphemeral(true)
-		);
+		await interaction.DeferMessageAsync(true);
 
 		// Parse arguments.
 		string title = GetArg<string>(args, _optionTitle);
@@ -228,10 +224,7 @@ class LFG : CommandHandler {
 		string response =
 			$"{_emojis.Delist} Created LFG listing:";
 		response += $" {thread.Mention}";
-		await interaction.EditOriginalResponseAsync(
-			new DiscordWebhookBuilder()
-				.WithContent(response)
-		);
+		await interaction.UpdateMessageAsync(response);
 	}
 
 	private static Group GetGroup(string option, DiscordUser owner) =>

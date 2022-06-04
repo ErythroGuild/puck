@@ -15,7 +15,7 @@ class Bulletin {
 			e.Handled = true;
 			Bulletin bulletin = _bulletins[id];
 			// Any registered messages can be responded to.
-			await e.Interaction.DeferComponentAsync();
+			await e.Interaction.AcknowledgeComponentAsync();
 
 			// Queue up action.
 			bulletin._actions.Add(new Task(async () => {

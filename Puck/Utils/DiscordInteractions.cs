@@ -31,7 +31,20 @@ static partial class Util {
 		(T)args[key];
 
 	// Convenience methods for responding to interactions.
-	public static Task DeferComponentAsync(this DiscordInteraction interaction) =>
+	public static Task DeferMessageAsync(this DiscordInteraction interaction, bool isEphemeral=false) =>
+		interaction.CreateResponseAsync(
+			InteractionResponseType.DeferredChannelMessageWithSource,
+			new DiscordInteractionResponseBuilder()
+				.AsEphemeral(isEphemeral)
+		);
+	public static Task UpdateMessageAsync(this DiscordInteraction interaction, string message) {
+		DiscordWebhookBuilder builder =
+			new DiscordWebhookBuilder()
+			.WithContent(message);
+		return interaction.EditOriginalResponseAsync(builder);
+	}
+
+	public static Task AcknowledgeComponentAsync(this DiscordInteraction interaction) =>
 		interaction.CreateResponseAsync(InteractionResponseType.DeferredMessageUpdate);
 	public static Task SubmitAutoCompleteAsync(this DiscordInteraction interaction, IReadOnlyList<string> choices) {
 		// Convert list of strings to list of discord choices.

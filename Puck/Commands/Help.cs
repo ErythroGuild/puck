@@ -33,11 +33,7 @@ class Help : CommandHandler {
 	}
 
 	private async Task HelpAsync(DiscordInteraction interaction, Dictionary<string, object> _) {
-		await interaction.CreateResponseAsync(
-			InteractionResponseType.DeferredChannelMessageWithSource,
-			new DiscordInteractionResponseBuilder()
-				.AsEphemeral(true)
-		);
+		await interaction.DeferMessageAsync(true);
 
 		DiscordGuild guild = interaction.Guild;
 
