@@ -1,253 +1,135 @@
-﻿using System;
-using System.Collections.Generic;
+﻿namespace Puck;
 
-namespace Puck {
-	class Group {
-		public enum Type {
-			Dungeon,
-			Raid, Warfront,
-			Arenas,
-			RBG, Battleground,
-			Vision,
-			Scenario, Island,
-			Other = -1,
-		};
+class Group {
+	public const int MaxMembers = 40;
 
-		public enum Role {
-			Tank, Heal, Dps,
-		};
+	public readonly bool AcceptAnyRole;
+	public readonly bool HasMaxCount;
+	public readonly DiscordUser Owner;
+	public int Tank => _tankList.Count;
+	public int Heal => _healList.Count;
+	public int Dps  => _dpsList.Count;
+	public int Members => Tank + Heal + Dps;
+	public string Type { get {
+		if (!HasMaxCount)
+			return "raid group";
 
-		public const Type default_type = Type.Dungeon;
+		int max = AcceptAnyRole
+		? _tankMax
+		: _tankMax + _healMax + _dpsMax;
+		string composition = AcceptAnyRole
+		? "any"
+		: string.Join("-", _tankMax, _healMax, _dpsMax);
 
-		// lookup table for command parsing of group type
-		static readonly Dictionary<string, Type> dict_commands_cache;
-		static readonly Dictionary<Type, List<string>> dict_commands =
-			new Dictionary<Type, List<string>> {
-				{ Type.Dungeon, new List<string> {
-					"dungeon",
-					"dungeons",
-					"mythics",
-					"m0",
-					"key",
-					"keys",
-					"keystone",
-					"keystones",
-					"m+",
-					"ksm",
-				} },
-				{ Type.Raid, new List<string> {
-					"raid",
-					"raids",
-				} },
-				{ Type.Warfront, new List<string> {
-					"warfront",
-					"warfronts",
-					"wf",
-				} },
-				{ Type.Arenas, new List<string> {
-					"arenas",
-					"arena",
-					"2v2",
-					"2v2s",
-					"2vs2",
-					"2vs2s",
-					"2s",
-					"3v3",
-					"3v3s",
-					"3vs3",
-					"3vs3s",
-					"3s",
-				} },
-				{ Type.RBG, new List<string> {
-					"rbg",
-					"rbgs",
-					"ratedbg",
-					"ratedbgs",
-					"ratedbattleground",
-					"ratedbattlegrounds",
-					"10v10",
-					"10v10s",
-					"10s",
-				} },
-				{ Type.Battleground, new List<string> {
-					"battleground",
-					"battlegrounds",
-					"bg",
-					"bgs",
-					"brawl",
-				} },
-				{ Type.Vision, new List<string> {
-					"vision",
-					"visions",
-					"hv",
-				} },
-				{ Type.Scenario, new List<string> {
-					"scenario",
-					"scenarios",
-				} },
-				{ Type.Island, new List<string> {
-					"island",
-					"islands",
-				} },
-				{ Type.Other, new List<string> {
-					"other",
-					"miscellaneous",
-					"misc",
-				} },
-			};
+		return $"{max}-man group ({composition})";
+	} }
 
-		// Parse a command to a strongly typed Type.
-		public static Type ParseType(string command) { return dict_commands_cache[command]; }
-		// Initialize the (sparse) lookup table for accepted commands.
-		static Group() {
-			Dictionary<string, Type> dict = new Dictionary<string, Type>();
-			foreach (Type type in dict_commands.Keys) {
-				foreach (string command in dict_commands[type]) {
-					dict.Add(command, type);
-				}
+	private readonly int _tankMax, _healMax, _dpsMax;
+	private readonly List<DiscordUser>
+		_tankList = new (),
+		_healList = new (),
+		_dpsList  = new ();
+
+	// Public builders to define a valid Group.
+	public static Group WithAnyRole(DiscordUser owner) =>
+		new (owner, true, false, 0, 0, 0);
+	public static Group WithAnyRole(DiscordUser owner, int max) =>
+		new (owner, true, true, max, max, max);
+	public static Group WithRoles(DiscordUser owner, int tank, int heal, int dps) =>
+		new (owner, false, true, tank, heal, dps);
+	// Hidden constructor.
+	private Group(
+		DiscordUser owner,
+		bool acceptAnyRole,
+		bool hasMaxCount,
+		int tank, int heal, int dps
+	) {
+		Owner = owner;
+		AcceptAnyRole = acceptAnyRole;
+		HasMaxCount = hasMaxCount;
+		_tankMax = tank;
+		_healMax = heal;
+		_dpsMax = dps;
+	}
+
+	// Cycle through valid role states (as the owner).
+	public void CycleTank() { Cycle(_tankList, _tankMax); }
+	public void CycleHeal() { Cycle(_healList, _healMax); }
+	public void CycleDps()  { Cycle(_dpsList , _dpsMax ); }
+	private void Cycle(List<DiscordUser> members, int max) {
+		bool canAdd = AcceptAnyRole
+			? Members < max
+			: members.Count < max;
+		if (!HasMaxCount && (Members < MaxMembers))
+			canAdd = true;
+
+		if (canAdd) {
+			members.Add(Owner);
+		} else {
+			int removed = members.RemoveAll(
+				(member) => member == Owner
+			);
+		}
+	}
+
+	// Add a member. Removes member from any other lists.
+	// Fails silently if group was full.
+	public void AddTank(DiscordUser member)
+		{ Add(member, _tankList, _tankMax); }
+	public void AddHeal(DiscordUser member)
+		{ Add(member, _healList, _healMax); }
+	public void AddDps(DiscordUser member)
+		{ Add(member, _dpsList, _dpsMax); }
+	private void Add(DiscordUser member, List<DiscordUser> members, int max) {
+		bool canAdd = AcceptAnyRole
+			? Members < max
+			: members.Count < max;
+		if (!HasMaxCount)
+			canAdd = true;
+
+		// Ensure member isn't in another group already.
+		Remove(member);
+
+		// Just re-adds the member if they were already in the list.
+		if (canAdd)
+			members.Add(member);
+	}
+
+	// Removes a member from all lists.
+	public void Remove(DiscordUser member) {
+		_tankList.RemoveAll((member_i) => member_i == member);
+		_healList.RemoveAll((member_i) => member_i == member);
+		_dpsList.RemoveAll((member_i) => member_i == member);
+	}
+
+	// Prints a formatted list of all members in the group, as well
+	// as any open spots (depending on the type of group defined).
+	public string PrintMemberList(Emojis e) {
+		List<string> output = new ();
+
+		void PrintList(DiscordEmoji emoji, List<DiscordUser> members, int max) {
+			foreach (DiscordUser member in members) {
+				string name = (member == Owner)
+					? "*Pre-filled*"
+					: member.Mention;
+				output.Add($"{emoji} - {name}");
 			}
-			dict_commands_cache = dict;
-		}
-
-
-
-		public readonly Type type;
-		public int tank, heal, dps; // "any" is treated as dps
-
-		// Constructors. Group.Type *must* always be specified.
-		public Group(Type type) :
-			this(0, 0, 0, type) { }
-		public Group(int tank, int heal, int dps, Type type) {
-			this.type = type;
-			this.tank = tank;
-			this.heal = heal;
-			this.dps = dps;
-		}
-
-		// Getters and setters for data members.
-		public void Set(Role role, int n) {
-			switch (role) {
-			case Role.Tank:
-				tank = n;
-				break;
-			case Role.Heal:
-				heal = n;
-				break;
-			case Role.Dps:
-				dps = n;
-				break;
+			if (HasMaxCount && !AcceptAnyRole) {
+				for (int i=members.Count; i<max; i++)
+					output.Add($"{emoji} - **[ Open ]**");
 			}
 		}
-		public int Get(Role role) {
-			return role switch {
-				Role.Tank => tank,
-				Role.Heal => heal,
-				Role.Dps  => dps,
-				_ => throw new ArgumentException(),
-			};
+		PrintList(e.Tank, _tankList, _tankMax);
+		PrintList(e.Heal, _healList, _healMax);
+		PrintList(e.Dps , _dpsList , _dpsMax );
+
+		// Print available spots if there is a max count, and any
+		// role is accepted.
+		if (HasMaxCount && AcceptAnyRole) {
+			for (int i=Members; i<_tankMax; i++)
+				output.Add("**[ Open ]**");
 		}
 
-		// Returns the total size of the group.
-		public int members() {
-			return tank + heal + dps;
-		}
-
-		// Doubles as the DiscordMessage string used for the bulletin.
-		public override string ToString() {
-			string str = "";
-			string box_empty = "\u2610";
-			string box_checked = "\u2611\uFE0E";
-			string separator = "\u2003";
-			string emoji_tank = Emoji.From(Role.Tank).ToString();
-			string emoji_heal = Emoji.From(Role.Heal).ToString();
-			string emoji_dps  = Emoji.From(Role.Dps ).ToString();
-
-			int total = members();
-			int counted = 0;
-			switch (type) {
-			case Type.Dungeon:
-				str += (tank == 0) ? box_empty : box_checked;
-				str += emoji_tank;
-
-				str += separator;
-				str += (heal == 0) ? box_empty : box_checked;
-				str += emoji_heal;
-
-				for (int i=1; i<=3; i++) {
-					str += separator;
-					str += (dps < i) ? box_empty : box_checked;
-					str += emoji_dps;
-				}
-				break;
-			case Type.Raid:
-			case Type.Warfront:
-			case Type.RBG:
-			case Type.Battleground:
-				str += emoji_tank + ": ";
-				str += tank.ToString();
-
-				str += separator;
-				str += emoji_heal + ": ";
-				str += heal.ToString();
-
-				str += separator;
-				str += emoji_dps + ": ";
-				str += dps.ToString();
-				break;
-			case Type.Arenas:
-				for (int i = 0; i < tank && counted < 3; i++, counted++) {
-					if (counted > 0)
-						str += separator;
-					str += emoji_tank;
-				}
-
-				for (int i = 0; i < heal && counted < 3; i++, counted++) {
-					if (counted > 0)
-						str += separator;
-					str += emoji_heal;
-				}
-
-				for (int i = 0; i < dps && counted < 3; i++, counted++) {
-					if (counted > 0)
-						str += separator;
-					str += emoji_dps;
-				}
-				break;
-			case Type.Vision:
-				for (int i = 0; i < tank && counted < 5; i++, counted++) {
-					if (counted > 0)
-						str += separator;
-					str += emoji_tank;
-				}
-
-				for (int i = 0; i < heal && counted < 5; i++, counted++) {
-					if (counted > 0)
-						str += separator;
-					str += emoji_heal;
-				}
-
-				for (int i = 0; i < dps && counted < 5; i++, counted++) {
-					if (counted > 0)
-						str += separator;
-					str += emoji_dps;
-				}
-				break;
-			case Type.Scenario:
-			case Type.Island:
-				for (int i = 1; i <= 3; i++) {
-					if (i > 1)
-						str += separator;
-					str += (total < i) ? box_empty : box_checked;
-					str += emoji_dps;
-				}
-				break;
-			case Type.Other:
-				str += "group size: ";
-				str += members();
-				break;
-			}
-
-			return str;
-		}
+		return output.ToLines();
 	}
 }

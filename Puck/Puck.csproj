@@ -1,21 +1,48 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <EnablePreviewFeatures>True</EnablePreviewFeatures>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
     <Nullable>enable</Nullable>
     <Authors>Ernest Gu</Authors>
     <ApplicationIcon />
-    <StartupObject />
+    <StartupObject>Puck.Program</StartupObject>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="DSharpPlus" Version="4.0.0-nightly-00711" />
+    <PackageReference Include="DSharpPlus" Version="4.3.0-nightly-01139" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.5" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.5">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="6.0.0" />
+    <PackageReference Include="Serilog" Version="2.11.0" />
+    <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+    <PackageReference Include="Serilog.Sinks.DelegatingText" Version="1.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="Serilog.Sinks.Map" Version="1.0.2" />
+    <PackageReference Include="Spectre.Console" Version="0.44.0" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="blocklist.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="config\commit.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="config\tag.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="config\token.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="config\token_debug.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="settings.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -24,5 +51,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
+    <Exec Command="powershell -ExecutionPolicy Bypass -NoProfile -NonInteractive -File scripts/version.ps1" />
+  </Target>
 
 </Project>

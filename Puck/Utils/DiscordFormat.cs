@@ -5,6 +5,7 @@ static partial class Util {
 	public static string Bold(this string input) => $"**{input}**";
 	public static string Italicize(this string input) => $"*{input}*";
 	public static string Underline(this string input) => $"__{input}__";
+	public static string Strikethrough(this string input) => $"~~{input}~~";
 	public static string Monospace(this string input) => $"`{input}`";
 	public static string Quote(this string input) => $"> {input}";
 	public static string Spoiler(this string input) => $"||{input}||";

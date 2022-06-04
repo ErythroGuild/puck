@@ -5,6 +5,8 @@ particular order.
 
 ---
 
+**Amber**, for moral support, encouragement, and putting up with me ♥
+
 **Krek**, **Ashlyn**, **Pawru**, **Dawn**, **Easley**, **Neko**,
 and **Christy**,
 for early feedback and moral support
