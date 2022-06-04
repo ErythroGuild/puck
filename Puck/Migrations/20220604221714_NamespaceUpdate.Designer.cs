@@ -10,15 +10,15 @@ using Puck.Databases;
 namespace Puck.Migrations
 {
     [DbContext(typeof(GuildConfigDatabase))]
-    [Migration("20220604061952_UnifyConstructors")]
-    partial class UnifyConstructors
+    [Migration("20220604221714_NamespaceUpdate")]
+    partial class NamespaceUpdate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.5");
 
-            modelBuilder.Entity("Puck.Database.GroupType", b =>
+            modelBuilder.Entity("Puck.Databases.GroupType", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -39,7 +39,7 @@ namespace Puck.Migrations
                     b.ToTable("GroupTypes");
                 });
 
-            modelBuilder.Entity("Puck.Database.GuildConfig", b =>
+            modelBuilder.Entity("Puck.Databases.GuildConfig", b =>
                 {
                     b.Property<string>("GuildId")
                         .HasColumnType("TEXT");
@@ -60,7 +60,7 @@ namespace Puck.Migrations
                     b.ToTable("GuildConfigs");
                 });
 
-            modelBuilder.Entity("Puck.Database.GuildRole", b =>
+            modelBuilder.Entity("Puck.Databases.GuildRole", b =>
                 {
                     b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
@@ -85,25 +85,25 @@ namespace Puck.Migrations
                     b.ToTable("GuildRoles");
                 });
 
-            modelBuilder.Entity("Puck.Database.GroupType", b =>
+            modelBuilder.Entity("Puck.Databases.GroupType", b =>
                 {
-                    b.HasOne("Puck.Database.GuildConfig", null)
+                    b.HasOne("Puck.Databases.GuildConfig", null)
                         .WithMany("AllowedGroupTypes")
                         .HasForeignKey("GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Puck.Database.GuildRole", b =>
+            modelBuilder.Entity("Puck.Databases.GuildRole", b =>
                 {
-                    b.HasOne("Puck.Database.GuildConfig", null)
+                    b.HasOne("Puck.Databases.GuildConfig", null)
                         .WithMany("AllowedRoles")
                         .HasForeignKey("GuildId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Puck.Database.GuildConfig", b =>
+            modelBuilder.Entity("Puck.Databases.GuildConfig", b =>
                 {
                     b.Navigation("AllowedGroupTypes");
 

@@ -4,7 +4,7 @@
 
 namespace Puck.Migrations
 {
-    public partial class UnifyConstructors : Migration
+    public partial class NamespaceUpdate : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {

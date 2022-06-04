@@ -18,10 +18,30 @@ class GuildConfigDatabase : DbContext {
 
 	protected override void OnModelCreating(ModelBuilder modelBuilder) {
 		modelBuilder.Entity<GuildConfig>();
+
 		modelBuilder.Entity<GuildRole>()
 			.HasIndex(t => t.GuildId);
 		modelBuilder.Entity<GroupType>()
 			.HasIndex(t => t.GuildId);
+
+		// Consider using a one-time script that compacts the
+		// database by reassigning IDs to the appropriate rowid.
+		// This could work better than the below.
+		//modelBuilder.Entity<GuildRole>()
+		//	.Property(t => t.Id)
+		//	.UseAutoIncrement(false);
+		//modelBuilder.Entity<GroupType>()
+		//	.Property(t => t.Id)
+		//	.UseAutoIncrement(false);
+		//// SQLite usually uses _rowid_ instead of AUTOINCREMENT.
+		//// (This only works with integer IDs though).
+		//// Temporary workaround until the above is available:
+		//modelBuilder.Entity<GuildRole>()
+		//	.Property(t => t.Id)
+		//	.HasConversion(v => v, v => v);
+		//modelBuilder.Entity<GroupType>()
+		//	.Property(t => t.Id)
+		//	.HasConversion(v => v, v => v);
 	}
 
 	public GuildConfig? GetConfig(ulong guildId) {
