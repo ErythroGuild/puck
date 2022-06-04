@@ -242,6 +242,7 @@ class Program {
 				// create a generic handler separately.
 				List<CommandHandler> handlers = new () {
 					new Help(Emojis),
+					new Config(Emojis),
 				};
 				List<Command> commands = new ();
 				foreach (CommandHandler handler in handlers) {
@@ -267,7 +268,7 @@ class Program {
 					tasks.Add(guild.BulkOverwriteApplicationCommandsAsync(commands_guild));
 				}
 				await Task.WhenAll(tasks);
-				Log.Information("  Registered commands in {Count} guilds.", tasks.Count);
+				Log.Information("  Registered commands in {Count} guild(s).", tasks.Count);
 				_stopwatchRegister.LogMsecDebug("    Took {RegisterTime} msec.");
 
 				//Client.GuildCreated += (client, e) => {

@@ -10,6 +10,7 @@ global using System.Threading.Tasks;
 // D#+.
 global using DSharpPlus;
 global using DSharpPlus.Entities;
+global using DSharpPlus.EventArgs;
 
 // Microsoft.
 global using Microsoft.Extensions.Logging;
