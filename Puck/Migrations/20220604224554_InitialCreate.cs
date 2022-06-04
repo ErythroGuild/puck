@@ -14,6 +14,7 @@ namespace Puck.Migrations
                 {
                     GuildId = table.Column<string>(type: "TEXT", nullable: false),
                     GuildName = table.Column<string>(type: "TEXT", nullable: false),
+                    DefaultGroupType = table.Column<string>(type: "TEXT", nullable: false),
                     DefaultDurationMsec = table.Column<double>(type: "REAL", nullable: false)
                 },
                 constraints: table =>

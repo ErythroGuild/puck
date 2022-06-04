@@ -10,8 +10,8 @@ using Puck.Databases;
 namespace Puck.Migrations
 {
     [DbContext(typeof(GuildConfigDatabase))]
-    [Migration("20220604221714_NamespaceUpdate")]
-    partial class NamespaceUpdate
+    [Migration("20220604224554_InitialCreate")]
+    partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
