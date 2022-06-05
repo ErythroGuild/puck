@@ -71,15 +71,6 @@ class Bulletin {
 		List<DbBulletin> entries = database.GetBulletins();
 
 		foreach (DbBulletin entry in entries) {
-			// Remove outdated entries.
-			DateTimeOffset expiry =
-				DateTimeOffset.ParseExact(entry.Expiry, "R", null);
-			if (expiry < DateTimeOffset.UtcNow) {
-				database.Bulletins.Remove(entry);
-				database.SaveChanges();
-				continue;
-			}
-
 			// Remove entries with archived threads.
 			DiscordThreadChannel? thread = await
 				Program.Client.GetChannelAsync(
@@ -88,6 +79,22 @@ class Bulletin {
 			if (thread is null || thread.ThreadMetadata.IsArchived) {
 				database.Bulletins.Remove(entry);
 				database.SaveChanges();
+				continue;
+			}
+
+			// Remove outdated entries.
+			DateTimeOffset expiry =
+				DateTimeOffset.ParseExact(entry.Expiry, "R", null);
+			if (expiry < DateTimeOffset.UtcNow) {
+				database.Bulletins.Remove(entry);
+				database.SaveChanges();
+
+				// Archive the thread if it should have been.
+				if (!thread.ThreadMetadata.IsArchived) {
+					await thread.ModifyAsync((t) => {
+						t.IsArchived = true;
+					});
+				}
 				continue;
 			}
 
