@@ -14,9 +14,9 @@ until you confirm them / set them up through `/config mention`.
 display a guide to setting up the bot on your server.
 
 *You can also find this bot at:*
-- **[Discord Bot List][2]**
+- **[Top.gg][2]**
 - **[Discord Bots][3]**
-- **[Bots on Discord][4]**
+- **[Discord Bot List][4]**
 
 
 
@@ -111,11 +111,11 @@ Studio, or the CLI tools) to update the databases. Once they're created,
 place them inside `Puck/data/`.
 
 Copy the entire `/config/` and `/data/` folders to the build output directory,
-and you sh ould be able to run the bot.
+and you should be able to run the bot.
 
 
 
 [1]: https://discord.com/api/oauth2/authorize?client_id=703068724818608138&permissions=326417992704&scope=applications.commands%20bot
 [2]: https://top.gg/bot/703068724818608138
 [3]: https://discord.bots.gg/bots/703068724818608138
-[4]: https://bots.ondiscord.xyz/bots/703068724818608138
+[4]: https://discordbotlist.com/bots/puck
