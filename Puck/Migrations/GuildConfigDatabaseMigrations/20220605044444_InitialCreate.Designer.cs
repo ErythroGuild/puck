@@ -7,10 +7,10 @@ using Puck.Databases;
 
 #nullable disable
 
-namespace Puck.Migrations
+namespace Puck.Migrations.GuildConfigDatabaseMigrations
 {
     [DbContext(typeof(GuildConfigDatabase))]
-    [Migration("20220604224554_InitialCreate")]
+    [Migration("20220605044444_InitialCreate")]
     partial class InitialCreate
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

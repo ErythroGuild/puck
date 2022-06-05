@@ -6,7 +6,7 @@ using Puck.Databases;
 
 #nullable disable
 
-namespace Puck.Migrations
+namespace Puck.Migrations.GuildConfigDatabaseMigrations
 {
     [DbContext(typeof(GuildConfigDatabase))]
     partial class GuildConfigDatabaseModelSnapshot : ModelSnapshot

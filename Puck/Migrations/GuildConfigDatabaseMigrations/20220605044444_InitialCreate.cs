@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Puck.Migrations
+namespace Puck.Migrations.GuildConfigDatabaseMigrations
 {
     public partial class InitialCreate : Migration
     {
