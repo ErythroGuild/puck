@@ -1,5 +1,7 @@
 using System.Timers;
 
+using DbBulletin = Puck.Databases.Bulletin;
+
 namespace Puck;
 
 class Bulletin {
@@ -64,6 +66,83 @@ class Bulletin {
 		};
 	}
 
+	public static async Task InitFromDatabase(Emojis emojis) {
+		using BulletinDatabase database = new ();
+		List<DbBulletin> entries = database.GetBulletins();
+
+		foreach (DbBulletin entry in entries) {
+			// Remove outdated entries.
+			DateTimeOffset expiry =
+				DateTimeOffset.ParseExact(entry.Expiry, "R", null);
+			if (expiry < DateTimeOffset.UtcNow) {
+				database.Bulletins.Remove(entry);
+				database.SaveChanges();
+				continue;
+			}
+
+			// Remove entries with archived threads.
+			DiscordThreadChannel? thread = await
+				Program.Client.GetChannelAsync(
+					ulong.Parse(entry.ThreadId)
+				) as DiscordThreadChannel;
+			if (thread is null || thread.ThreadMetadata.IsArchived) {
+				database.Bulletins.Remove(entry);
+				database.SaveChanges();
+				continue;
+			}
+
+			DiscordGuild guild = await Program.Client
+				.GetGuildAsync(ulong.Parse(entry.GuildId));
+
+			// Deserialize bulletin parameters.
+			string title = entry.Title;
+			string? description = (entry.Description == "")
+				? null
+				: entry.Description;
+			DiscordRole? mention = (entry.MentionId == "")
+				? null
+				: guild.GetRole(ulong.Parse(entry.MentionId));
+			DiscordUser owner = await Program.Client
+				.GetUserAsync(ulong.Parse(entry.OwnerId));
+			DiscordMessage message = await
+				thread.GetMessageAsync(ulong.Parse(entry.MessageId));
+
+			// Deserialize group parameters.
+			bool acceptAnyRole = entry.AcceptAnyRole;
+			bool hasMaxCount = entry.HasMaxCount;
+			Group group = (hasMaxCount, acceptAnyRole) switch {
+				(false, _) =>
+					Group.WithAnyRole(owner),
+				(true , true ) =>
+					Group.WithAnyRole(owner, entry.TankMax),
+				(true , false) =>
+					Group.WithRoles(
+						owner,
+						entry.TankMax,
+						entry.HealMax,
+						entry.DpsMax
+					),
+			};
+			// Populate group lists.
+			await group.PopulateFromDatabaseEntry(entry);
+
+			// Create bulletin and start tracking it.
+			Bulletin bulletin = new (
+				title,
+				description,
+				mention,
+				expiry,
+				group,
+				thread,
+				message,
+				emojis
+			);
+			_bulletins.TryAdd(message.Id, bulletin);
+			bulletin._timer.Start();
+		}
+
+	}
+
 	public readonly string Title;
 	public readonly string? Description;
 	public readonly DiscordRole? Mention;
@@ -117,7 +196,32 @@ class Bulletin {
 				_thread.SendMessageAsync(GetMessage(true));
 			_bulletins.TryAdd(_message.Id, this);
 			_timer.Start();
+			UpdateDatabaseEntry();
 		});
+	}
+	private Bulletin(
+		string title,
+		string? description,
+		DiscordRole? mention,
+		DateTimeOffset expiry,
+		Group group,
+		DiscordThreadChannel thread,
+		DiscordMessage message,
+		Emojis e
+	) {
+		Title = title;
+		Description = description;
+		Mention = mention;
+		Group = group;
+		Expiry = expiry;
+
+		_timer = CreateTimer(expiry - DateTimeOffset.Now, false);
+		_timer.Elapsed += async (timer, e) =>
+			await Delist();
+
+		_thread = thread;
+		_message = message;
+		_e = e;
 	}
 
 	public void IncrementTime() {
@@ -137,14 +241,24 @@ class Bulletin {
 		if (_thread is not null)
 			await _thread.ModifyAsync((t) => t.IsArchived = true);
 		
-		if (_message is not null)
+		if (_message is not null) {
 			_bulletins.TryRemove(_message.Id, out _);
+
+			using BulletinDatabase database = new ();
+			DbBulletin? entry =
+				database.GetBulletinFromMessage(_message.Id);
+			if (entry is not null)
+				database.Bulletins.Remove(entry);
+			database.SaveChanges();
+		}
 	}
 
 	private async Task Update() {
 		if (_message is not null) {
-			if (_bulletins.ContainsKey(_message.Id))
+			if (_bulletins.ContainsKey(_message.Id)) {
 				await _message.ModifyAsync(GetMessage(true));
+				UpdateDatabaseEntry();
+			}
 		}
 	}
 	private DiscordMessageBuilder GetMessage(bool isEnabled) {
@@ -201,6 +315,33 @@ class Bulletin {
 		}
 
 		return message;
+	}
+	private void UpdateDatabaseEntry() {
+		if (_message is null)
+			return;
+
+		using BulletinDatabase database = new ();
+		DbBulletin? entry =
+			database.GetBulletinFromMessage(_message.Id);
+
+		bool doAdd = false;
+		if (entry is null) {
+			entry = new (_message.Id.ToString());
+			doAdd = true;
+		}
+
+		entry.GuildId = _thread?.Guild.Id.ToString() ?? "";
+		entry.ThreadId = _thread?.Id.ToString() ?? "";
+		entry.Title = Title;
+		entry.Description = Description ?? "";
+		entry.MentionId = Mention?.Id.ToString() ?? "";
+		entry.Expiry = Expiry.ToString("R");
+
+		Group.WriteToDatabaseEntry(ref entry);
+
+		if (doAdd)
+			database.Bulletins.Add(entry);
+		database.SaveChanges();
 	}
 
 	private string? GetThumbnailUrl() {

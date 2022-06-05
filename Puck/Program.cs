@@ -225,6 +225,9 @@ class Program {
 				Components.Pages.Init();
 				Components.Selection.Init();
 
+				// Read in saved bulletin data.
+				await Bulletin.InitFromDatabase(Emojis);
+
 				// Attach command handler before registering commands.
 				Client.InteractionCreated += (client, e) => {
 					_ = Task.Run(async () => {
@@ -278,7 +281,7 @@ class Program {
 						using GuildConfigDatabase database = new ();
 						GuildConfig config =
 							GuildConfigDatabase.DefaultConfig(e.Guild);
-						database.Add(config);
+						database.Configs.Add(config);
 						database.SaveChanges();
 					});
 					return Task.CompletedTask;
@@ -292,7 +295,7 @@ class Program {
 						GuildConfig? config =
 							database.GetConfig(e.Guild.Id);
 						if (config is not null)
-							database.Remove(config);
+							database.Configs.Remove(config);
 						database.SaveChanges();
 					});
 					return Task.CompletedTask;

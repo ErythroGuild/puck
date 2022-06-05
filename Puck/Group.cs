@@ -1,4 +1,6 @@
-﻿namespace Puck;
+﻿using DbBulletin = Puck.Databases.Bulletin;
+
+namespace Puck;
 
 class Group {
 	public const int MaxMembers = 40;
@@ -29,6 +31,8 @@ class Group {
 		_tankList = new (),
 		_healList = new (),
 		_dpsList  = new ();
+
+	private const string _separator = ",";
 
 	// Public builders to define a valid Group.
 	public static Group WithAnyRole(DiscordUser owner) =>
@@ -131,5 +135,56 @@ class Group {
 		}
 
 		return output.ToLines();
+	}
+
+	public void WriteToDatabaseEntry(ref DbBulletin entry) {
+		entry.OwnerId = Owner.Id.ToString();
+
+		List<string> tankIds = new ();
+		foreach (DiscordUser user in _tankList)
+			tankIds.Add(user.Id.ToString());
+		List<string> healIds = new ();
+		foreach (DiscordUser user in _healList)
+			healIds.Add(user.Id.ToString());
+		List<string> dpsIds = new ();
+		foreach (DiscordUser user in _dpsList)
+			dpsIds.Add(user.Id.ToString());
+
+		entry.TankIds = string.Join(_separator, tankIds);
+		entry.HealIds = string.Join(_separator, healIds);
+		entry.DpsIds  = string.Join(_separator, dpsIds );
+
+		entry.AcceptAnyRole = AcceptAnyRole;
+		entry.HasMaxCount = HasMaxCount;
+		entry.TankMax = _tankMax;
+		entry.HealMax = _healMax;
+		entry.DpsMax  = _dpsMax ;
+	}
+	public async Task PopulateFromDatabaseEntry(DbBulletin entry) {
+		_tankList.AddRange(await
+			UsersFromListAsync(entry.TankIds)
+		);
+		_healList.AddRange(await
+			UsersFromListAsync(entry.HealIds)
+		);
+		_dpsList.AddRange(await
+			UsersFromListAsync(entry.DpsIds)
+		);
+	}
+
+	private static async Task<List<DiscordUser>> UsersFromListAsync(string list) {
+		List<DiscordUser> users = new ();
+		string[] ids = list.Split(
+			_separator,
+			StringSplitOptions.RemoveEmptyEntries
+		);
+		
+		foreach (string id in ids) {
+			DiscordUser user = await Program.Client
+				.GetUserAsync(ulong.Parse(id));
+			users.Add(user);
+		}
+
+		return users;
 	}
 }
