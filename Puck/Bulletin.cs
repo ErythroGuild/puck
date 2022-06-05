@@ -204,7 +204,8 @@ class Bulletin {
 	}
 
 	private string? GetThumbnailUrl() {
-		return "https://i.imgur.com/x6TwpSQ.jpeg";
+		return null;
+		//return "https://i.imgur.com/x6TwpSQ.jpeg";
 	}
 
 	private static DiscordComponent[] ButtonsSignup(Emojis e) =>
