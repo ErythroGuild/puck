@@ -1,0 +1,71 @@
+name: .NET 6 Build (Linux)
+
+on:
+  push:
+    branches: [ master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+  
+concurrency:
+  group: ci-build-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: [ self-hosted, Linux ]
+    defaults:
+      run:
+        working-directory: ./Puck
+    steps:
+    # Checkout repository.
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Fetch tags
+      run: git fetch --prune --unshallow
+    
+    # Setup .NET.
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+        include-prerelease: true
+        
+    # Build/test/publish.
+    - name: Clean
+      run: dotnet clean
+    - name: Build
+      run: dotnet build -c Release
+    #- name: Test
+    #  run: dotnet test --no-build --verbosity normal
+    - name: Publish
+      run: dotnet publish -p:PublishProfile=Linux -c Release
+
+    # Stop currently running service on server.
+    - name: Stop server service
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DEV_HOST }}
+        username: ${{ secrets.DEV_USER_ROOT }}
+        password: ${{ secrets.DEV_PASSWORD_ROOT }}
+        script: systemctl stop discordbot-puck
+      
+    # Deploy to server.
+    - name: Copy files to server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.DEV_HOST }}
+        username: ${{ secrets.DEV_USER }}
+        password: ${{ secrets.DEV_PASSWORD }}
+        source: "Puck/bin/Publish-Linux/"
+        target: "${{ secrets.DEV_DIR_BOTS }}puck/"
+        strip_components: 3
+
+    # Restart service on server.
+    - name: Start server service
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.DEV_HOST }}
+        username: ${{ secrets.DEV_USER_ROOT }}
+        password: ${{ secrets.DEV_PASSWORD_ROOT }}
+        script: systemctl start discordbot-puck
