@@ -1,6 +1,6 @@
 This project wouldn't be possible without *everyone* who answered my
 questions, provided suggestions and feedback, and tested the bot.
-The following is an incomplete list of anyone who has helped, in no
+The following is an incomplete list of people who have helped, in no
 particular order.
 
 ---
