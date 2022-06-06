@@ -50,6 +50,7 @@ class Program {
 		_templateFile           = @"{Timestamp:yyyy-MM-dd HH:mm:ss.fff} > [{Level:u3}] {Message:j}{NewLine}{Exception}";
 
 	static Program() {
+		Console.OutputEncoding = System.Text.Encoding.UTF8;
 		const string logo =
 			"""
 				    [#86CFDA on black]______           _    [/]
@@ -246,6 +247,7 @@ class Program {
 				List<CommandHandler> handlers = new () {
 					new Help(Emojis),
 					new Config(Emojis),
+					new About(Emojis),
 				};
 				List<Command> commands = new ();
 				foreach (CommandHandler handler in handlers) {

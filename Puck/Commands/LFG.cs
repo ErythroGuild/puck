@@ -159,6 +159,15 @@ class LFG : CommandHandler {
 	private async Task LfgAsync(DiscordInteraction interaction, Dictionary<string, object> args) {
 		await interaction.DeferMessageAsync(true);
 
+		// Check that channel is not a "text-in-voice" channel.
+		// (Threads cannot be created in these channels.)
+		if (interaction.Channel.Type == ChannelType.Voice) {
+			await interaction.UpdateMessageAsync(
+				$"{_emojis.Cancel} Cannot create threads in a voice channel."
+			);
+			return;
+		}
+
 		// Parse arguments.
 		string title = GetArg<string>(args, _optionTitle);
 		string? description = HasArg(args, _optionDescription)

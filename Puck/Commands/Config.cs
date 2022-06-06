@@ -199,10 +199,14 @@ class Config : CommandHandler {
 			group_types_string.Add("*Enabled group type:*");
 		else
 			group_types_string.Add("*Enabled group types:*");
-		foreach (string key in group_types) {
-			group_types_string.Add(
-				$"{_emsp}{_wbul}{_ensp}`{LFG.GroupTypeName(key)!}`"
-			);
+		// Loop over the default list instead of the existing
+		// keys, to ensure order is based on a fixed list.
+		foreach (string key in LFG.AllGroupTypes) {
+			if (group_types.Contains(key)) {
+				group_types_string.Add(
+					$"{_emsp}{_wbul}{_ensp}`{LFG.GroupTypeName(key)!}`"
+				);
+			}
 		}
 
 		string response =
