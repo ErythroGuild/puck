@@ -5,6 +5,7 @@ using DbBulletin = Puck.Databases.Bulletin;
 namespace Puck;
 
 class Bulletin {
+	public static int Count => _bulletins.Count;
 	// indexed by (first post = the embed) message id
 	private static readonly ConcurrentDictionary<ulong, Bulletin> _bulletins = new ();
 

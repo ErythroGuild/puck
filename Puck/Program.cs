@@ -247,6 +247,7 @@ class Program {
 				List<CommandHandler> handlers = new () {
 					new Help(Emojis),
 					new Config(Emojis),
+					new About(Emojis),
 				};
 				List<Command> commands = new ();
 				foreach (CommandHandler handler in handlers) {
