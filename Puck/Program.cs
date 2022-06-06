@@ -259,9 +259,10 @@ class Program {
 
 				// Register commands in each connected guild.
 				// A customized version of the LFG command is used.
-				List<Task> tasks = new ();
+				List<Task> tasks_register = new ();
 				_stopwatchRegister.Start();
 				foreach (DiscordGuild guild in Client.Guilds.Values) {
+					Log.Debug("Registering commands to {GuildName}", guild.Name);
 					using GuildConfigDatabase database = new ();
 					GuildConfig? config = database.GetConfig(guild.Id);
 					IReadOnlyList<string> keys = config is null
@@ -270,22 +271,30 @@ class Program {
 					List<Command> commands_guild = new (commands) {
 						new LFG(keys, Emojis).Command
 					};
-					try {
-						Log.Debug("Registering commands to {Guild Name}", guild.Name);
-						//tasks.Add(guild.BulkOverwriteApplicationCommandsAsync(commands_guild));
-						await guild.BulkOverwriteApplicationCommandsAsync(commands_guild);
-					} catch (Exception exception) {
-						Log.Error("Registration failure - {Guild Name}", guild.Name);
-						Log.Error("Exception:\n{Exception}", exception);
-					}
+					tasks_register.Add(
+						guild.BulkOverwriteApplicationCommandsAsync(commands_guild)
+					);
 				}
-				//try {
-				//	await Task.WhenAll(tasks);
-				//} catch (Exception exception) {
-				//	Log.Error("Registration incomplete.");
-				//	Log.Error("Exception:\n{Exception}", exception);
-				//}
-				Log.Information("  Registered commands in {Count} guild(s).", tasks.Count);
+
+				// Await all commands in parallel, and handle all
+				// thrown exceptions (e.g. if the bot is missing the
+				// application.commands scope).
+				int tasks_succeeded = 0;
+				int tasks_failed = 0;
+				Task register_commands = Task.WhenAll(tasks_register);
+				try {
+					await register_commands;
+				} catch (Exception) {
+					Log.Information("Some registrations failed. (This may be due to incorrect scope.)");
+				}
+				foreach (Task task in tasks_register) {
+					if (task.IsCompleted)
+						tasks_succeeded++;
+					if (task.IsFaulted)
+						tasks_failed++;
+				}
+				Log.Information("  Registered commands in {Count} guild(s).", tasks_succeeded);
+				Log.Information("  Registration failed in {Count} guild(s).", tasks_failed);
 				_stopwatchRegister.LogMsecDebug("    Took {RegisterTime} msec.");
 
 				Client.GuildCreated += (client, e) => {
@@ -309,6 +318,7 @@ class Program {
 						try {
 							await e.Guild
 								.BulkOverwriteApplicationCommandsAsync(commands);
+							Log.Information("  Commands registered.", e.Guild.Name);
 						} catch (Exception exception) {
 							Log.Error("Registration incomplete.");
 							Log.Error("Exception:\n{Exception}", exception);
