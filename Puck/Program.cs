@@ -271,18 +271,20 @@ class Program {
 						new LFG(keys, Emojis).Command
 					};
 					try {
-						tasks.Add(guild.BulkOverwriteApplicationCommandsAsync(commands_guild));
+						Log.Debug("Registering commands to {Guild Name}", guild.Name);
+						//tasks.Add(guild.BulkOverwriteApplicationCommandsAsync(commands_guild));
+						await guild.BulkOverwriteApplicationCommandsAsync(commands_guild);
 					} catch (Exception exception) {
 						Log.Error("Registration failure - {Guild Name}", guild.Name);
 						Log.Error("Exception:\n{Exception}", exception);
 					}
 				}
-				try {
-					await Task.WhenAll(tasks);
-				} catch (Exception exception) {
-					Log.Error("Registration incomplete.");
-					Log.Error("Exception:\n{Exception}", exception);
-				}
+				//try {
+				//	await Task.WhenAll(tasks);
+				//} catch (Exception exception) {
+				//	Log.Error("Registration incomplete.");
+				//	Log.Error("Exception:\n{Exception}", exception);
+				//}
 				Log.Information("  Registered commands in {Count} guild(s).", tasks.Count);
 				_stopwatchRegister.LogMsecDebug("    Took {RegisterTime} msec.");
 
