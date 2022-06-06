@@ -277,14 +277,25 @@ class Program {
 				_stopwatchRegister.LogMsecDebug("    Took {RegisterTime} msec.");
 
 				Client.GuildCreated += (client, e) => {
-					_ = Task.Run(() => {
+					_ = Task.Run(async () => {
 						Log.Information("Added to guild: {GuildName}", e.Guild.Name);
 
+						// Initialize settings to default.
 						using GuildConfigDatabase database = new ();
 						GuildConfig config =
 							GuildConfigDatabase.DefaultConfig(e.Guild);
 						database.Configs.Add(config);
 						database.SaveChanges();
+
+						// Register commands.
+						List<Command> commands = new () {
+							new Help(Emojis).Command,
+							new Config(Emojis).Command,
+							new LFG(LFG.DefaultGroupTypes, Emojis).Command,
+							new About(Emojis).Command,
+						};
+						await e.Guild
+							.BulkOverwriteApplicationCommandsAsync(commands);
 					});
 					return Task.CompletedTask;
 				};
