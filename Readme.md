@@ -17,6 +17,7 @@ display a guide to setting up the bot on your server.
 - **[Top.gg][2]**
 - **[Discord Bots][3]**
 - **[Discord Bot List][4]**
+- **[Discord Labs][5]**
 
 
 
@@ -119,3 +120,4 @@ and you should be able to run the bot.
 [2]: https://top.gg/bot/703068724818608138
 [3]: https://discord.bots.gg/bots/703068724818608138
 [4]: https://discordbotlist.com/bots/puck
+[5]: https://bots.discordlabs.org/bot/703068724818608138
