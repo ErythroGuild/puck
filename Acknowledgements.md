@@ -23,7 +23,11 @@ for early feedback and moral support
 
 **Slumbers**, for help fixing and testing said bug
 
-**the DSharpPlus discord server**, for help with programming problems
+**Velvet**, **Lunar**, and the rest of **the D#+ discord server**,
+for help with library issues
+
+**Shadow** from Discord Labs, for finding and helping troubleshoot
+a guild command registration bug
 
 and **everyone in \<Erythro\>**, for testing, feedback, and help
 
