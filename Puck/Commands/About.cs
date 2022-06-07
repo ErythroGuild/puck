@@ -65,8 +65,8 @@ class About : CommandHandler {
 			: "servers";
 		string description = new List<string> {
 			$"Tracking: **{bulletins}** {word_listing} + **{servers}** {word_server}",
+			"written with **D#+**; hosted on **Linode**",
 			$"[Source]({_urlRepo}) {_emojis.Tank} [Privacy]({_urlPrivacy}) {_emojis.Heal} [Credits]({_urlCredits}) {_emojis.Dps} [License]({_urlLicense})",
-			"Written with D#+; hosted on Linode",
 		}.ToLines();
 
 		DiscordEmbedBuilder embed = new DiscordEmbedBuilder()
