@@ -262,7 +262,7 @@ class Program {
 				List<Task> tasks_register = new ();
 				_stopwatchRegister.Start();
 				foreach (DiscordGuild guild in Client.Guilds.Values) {
-					Log.Debug("Registering commands to {GuildName}", guild.Name);
+					Log.Debug("    Registering commands to {GuildName}", guild.Name);
 					using GuildConfigDatabase database = new ();
 					GuildConfig? config = database.GetConfig(guild.Id);
 					IReadOnlyList<string> keys = config is null
@@ -285,7 +285,7 @@ class Program {
 				try {
 					await register_commands;
 				} catch (Exception) {
-					Log.Information("Some registrations failed. (This may be due to incorrect scope.)");
+					Log.Information("    Some registrations failed. (This may be due to incorrect scope.)");
 				}
 				foreach (Task task in tasks_register) {
 					if (task.IsCompleted)
