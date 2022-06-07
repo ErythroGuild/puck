@@ -15,9 +15,9 @@ display a guide to setting up the bot on your server.
 
 *You can also find this bot at:*
 - **[Top.gg][2]**
-- **[Discord Bots][3]**
-- **[Discord Bot List][4]**
-- **[Discord Labs][5]**
+- **[Discord Bot Labs][3]**
+- **[Discord Bots][4]**
+- **[Discord Bot List][5]**
 
 
 
@@ -118,6 +118,6 @@ and you should be able to run the bot.
 
 [1]: https://discord.com/api/oauth2/authorize?client_id=703068724818608138&permissions=326417992704&scope=applications.commands%20bot
 [2]: https://top.gg/bot/703068724818608138
-[3]: https://discord.bots.gg/bots/703068724818608138
-[4]: https://discordbotlist.com/bots/puck
-[5]: https://bots.discordlabs.org/bot/703068724818608138
+[3]: https://bots.discordlabs.org/bot/703068724818608138
+[4]: https://discord.bots.gg/bots/703068724818608138
+[5]: https://discordbotlist.com/bots/puck
