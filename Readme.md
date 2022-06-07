@@ -15,7 +15,7 @@ display a guide to setting up the bot on your server.
 
 *You can also find this bot at:*
 - **[Top.gg][2]**
-- **[Discord Labs][3]**
+- **[Discord Bot Labs][3]**
 - **[Discord Bots][4]**
 - **[Discord Bot List][5]**
 
