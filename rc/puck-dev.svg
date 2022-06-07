@@ -85,7 +85,7 @@
        y="244.08328"
        x="-2.4613956e-07"
        height="52.916676"
-       width="52.916668"
+       width="52.916691"
        id="rect864"
        style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#3e0600;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.79375;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate" />
     <g
@@ -107,10 +107,6 @@
         <g
            id="g1039"
            style="stroke-width:0.517193">
-          <path
-             style="color:#000000;clip-rule:nonzero;display:inline;overflow:visible;visibility:visible;opacity:1;isolation:auto;mix-blend-mode:normal;color-interpolation:sRGB;color-interpolation-filters:linearRGB;solid-color:#000000;solid-opacity:1;vector-effect:none;fill:#ffcec9;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:0.410522;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:normal;color-rendering:auto;image-rendering:auto;shape-rendering:auto;text-rendering:auto;enable-background:accumulate"
-             d="M 27.667302,284.64964 C 25.036603,286.32754 24.375696,286.99995 24.148875,288.75511 23.995111,289.94495 24.088742,290.80743 25.390364,291.49189 26.506667,292.0789 27.633853,291.51837 28.670678,291.51821 29.707353,291.51805 30.531284,292.22055 31.647421,291.63363 32.949044,290.94917 33.656884,289.99219 33.503121,288.80235 33.276299,287.0472 32.237418,286.42776 29.606719,284.64964 29.066703,284.41624 28.225215,284.43895 27.667302,284.64964 Z"
-             id="path815-5-73-2-5" />
           <g
              id="g1030"
              style="stroke-width:0.517193">
@@ -284,10 +280,20 @@
          d="M 15.700806,294.37681 C 19.760371,280.80691 9.4295156,279.99039 4.251734,270.34955 -1.5182969,283.17764 11.588888,285.69147 15.700806,294.37681 Z"
          id="path1116-4-2" />
     </g>
-    <path
-       sodipodi:nodetypes="cc"
-       id="divider"
-       d="M 4.2158376,282.30198 47.466128,256.72678"
-       style="color:#000000;overflow:visible;fill:none;fill-opacity:1;stroke:#ffcec9;stroke-width:2.1166677;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:4.23333539, 4.23333539;stroke-dashoffset:6.13833632;stroke-opacity:1" />
+    <g
+       id="g1409"
+       transform="matrix(1.1168202,0,0,1.1205878,-3.0187483,-32.500146)"
+       style="stroke-width:0.893892">
+      <path
+         sodipodi:nodetypes="ccc"
+         id="divider-4"
+         d="M 4.2158376,282.30198 17.56226,274.40984 47.466128,256.72678"
+         style="color:#000000;overflow:visible;fill:none;fill-opacity:1;stroke:#3e0600;stroke-width:1.89208;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:6.13833;stroke-opacity:1" />
+      <path
+         sodipodi:nodetypes="cc"
+         id="divider"
+         d="M 4.2158376,282.30198 47.466128,256.72678"
+         style="color:#000000;overflow:visible;fill:none;fill-opacity:1;stroke:#ffcec9;stroke-width:0.946037;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:0.946037, 2.83811;stroke-dashoffset:3.50034;stroke-opacity:1" />
+    </g>
   </g>
 </svg>
