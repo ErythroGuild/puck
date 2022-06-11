@@ -26,6 +26,8 @@ class ConstBiMap<T, U>
 	public U this[T key] => _tableForward[key];
 	public T this[U key] => _tableReverse[key];
 
+	// Explicit accessors are provided in case the indexer overloads
+	// are ambiguous (T and U are the same type).
 	public U GetForward(T key) => _tableForward[key];
 	public T GetReverse(U key) => _tableReverse[key];
 }
