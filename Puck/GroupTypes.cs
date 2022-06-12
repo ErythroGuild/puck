@@ -99,7 +99,8 @@ static class GroupTypes {
 			[Type.Raid40] = "40-man raid",
 		});
 
-	public static Type ToType(string id) => _typeId_map[id];
+	public static Type TypeFromId(string id) => _typeId_map[id];
+	public static Type TypeFromName(string name) => _typeName_map[name];
 	public static string GetId(Type type) => _typeId_map[type];
 	public static string GetName(Type type) => _typeName_map[type];
 
@@ -131,4 +132,29 @@ static class GroupTypes {
 
 			_ => throw new ArgumentException("Unknown group type.", nameof(type)),
 		};
+
+	public static IList<Type> GetAllTypes() =>
+		Enum.GetValues<Type>();
+	public static IList<Type> GetDefaultTypes() =>
+		new List<Type> {
+			Type.Party2_Any,
+			Type.Party3_Any,
+			Type.Party5_Any,
+			Type.Party5_113,
+			Type.Raid20,
+			Type.Raid30,
+		};
+
+	public static IList<string> GetTypeIds(IReadOnlyList<Type> types) {
+		List<string> ids = new ();
+		foreach (Type type in types)
+			ids.Add(GetId(type));
+		return ids;
+	}
+	public static IList<string> GetTypeNames(IReadOnlyList<Type> types) {
+		List<string> names = new ();
+		foreach (Type type in types)
+			names.Add(GetName(type));
+		return names;
+	}
 }
