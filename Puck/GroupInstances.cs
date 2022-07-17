@@ -21,6 +21,10 @@ static class GroupInstances {
 		CN, SoD, SFO,
 	};
 
+	// See (a bit out of date):
+	// - https://github.com/Gethe/wow-ui-textures/tree/live/ENCOUNTERJOURNAL
+	// - https://github.com/Gethe/wow-ui-textures/tree/live/EncounterJournal
+	// - https://github.com/Gethe/wow-ui-textures/tree/live/LFGFRAME
 	private static readonly ReadOnlyDictionary<WowDungeon, string> _wowDungeonUrls =
 		new (new ConcurrentDictionary<WowDungeon, string> {
 			[WowDungeon.NW  ] = @"",
